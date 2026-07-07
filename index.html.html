@@ -1001,7 +1001,7 @@ function cartDrawer(){
         </div>
         <div class="field" id="dateField">
           <label>Ou une date précise</label>
-          <input type="date" id="desiredDate" />
+          <input type="text" id="desiredDate" placeholder="Ex : 07/07/2026 | 14h" />
         </div>
       </fieldset>
 
@@ -1041,7 +1041,7 @@ function mesCommandesView(){
       <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
         <div>
           <div style="font-weight:700; font-size:16px; font-family:'Outfit',sans-serif;">Commande du ${new Date(o.date).toLocaleString('fr-FR')}</div>
-          <div class="muted" style="margin-top:4px;">${o.asap ? 'Livraison : dès que possible' : (o.desiredDate ? 'Livraison souhaitée : '+new Date(o.desiredDate).toLocaleDateString('fr-FR') : '—')}</div>
+          <div class="muted" style="margin-top:4px;">${o.asap ? 'Livraison : dès que possible' : (o.desiredDate ? 'Livraison souhaitée : '+esc(o.desiredDate) : '—')}</div>
         </div>
         <span class="status-pill status-${o.status}">${orderStatusLabel(o.status)}</span>
       </div>
@@ -1898,6 +1898,7 @@ function commandesPanel(){
             <div style="font-size:13px; color:var(--ink-soft); font-family:'Space Grotesk',monospace; margin-bottom:4px;">Commande du ${new Date(o.date).toLocaleString('fr-FR')}</div>
             <div class="aoc-client">${esc(o.client)}</div>
             <div style="font-size:14px; color:var(--ink-soft); margin-top:2px;">📞 ${esc(o.phone||'—')}</div>
+            <div style="font-size:14px; color:var(--leaf); margin-top:4px; font-weight:600;">🚚 ${o.asap ? 'Dès que possible' : (o.desiredDate ? esc(o.desiredDate) : '—')}</div>
           </div>
           <div style="text-align:right;">
             <div style="font-size:20px; font-weight:800; color:var(--amber); font-family:'Space Grotesk',monospace;">${o.total.toFixed(2)}$</div>
@@ -1912,6 +1913,12 @@ function commandesPanel(){
         <div style="margin:4px 0 16px; padding:12px 14px; background:rgba(226,176,80,0.08); border:1px solid rgba(226,176,80,0.25); border-radius:12px;">
           <div style="font-size:12px; font-weight:700; color:var(--amber); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">📝 Note du client</div>
           <div style="font-size:14px; color:var(--ink); white-space:pre-wrap;">${esc(o.note)}</div>
+        </div>` : ''}
+
+        ${o.iban ? `
+        <div style="margin:4px 0 16px; padding:12px 14px; background:rgba(130,163,94,0.08); border:1px solid rgba(130,163,94,0.25); border-radius:12px;">
+          <div style="font-size:12px; font-weight:700; color:var(--leaf); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">🏦 IBAN (règlement par virement)</div>
+          <div style="font-size:14px; color:var(--ink); font-family:'Space Grotesk',monospace; font-weight:600; letter-spacing:0.5px;">${esc(o.iban)}</div>
         </div>` : ''}
 
         <div style="display:flex; align-items:center; gap:12px; justify-content:space-between; flex-wrap:wrap;">
@@ -2329,6 +2336,8 @@ function onSubmitOrder(){
   const dDate = document.getElementById('desiredDate').value;
   const noteEl = document.getElementById('orderNote');
   const orderNote = noteEl ? noteEl.value.trim() : '';
+  const ibanEl = document.getElementById('ibanNumber');
+  const iban = ibanEl ? ibanEl.value.trim() : '';
   
   if(!cName || (!asap && !dDate)) {
     err.style.display='block';
@@ -2347,7 +2356,7 @@ function onSubmitOrder(){
     date: new Date().toISOString(),
     username: state.auth.username,
     client: cName, contactPerson: cPers, phone: cPhone,
-    asap, desiredDate: dDate, note: orderNote,
+    asap, desiredDate: dDate, note: orderNote, iban,
     items, total: cartTotal(), status: 'attente',
     stockDeducted: false
   };
