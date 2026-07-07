@@ -516,7 +516,7 @@ const DEFAULT_CATALOG = [
   {id:'l12', name:'Huile de tournesol', price:8, category:'legumes', icon:'🛢️', image:'https://i.goopics.net/rpt8do.png', qty:65},
   {id:'l13', name:"Huile d'olive", price:8, category:'legumes', icon:'🫙', image:'https://i.goopics.net/f3pa14.png', qty:1413},
   {id:'l14', name:'Résine', price:7, category:'legumes', icon:'🟤', image:'https://i.goopics.net/mxh5rb.png', qty:0},
-  {id:'l16', name:'Pot de résine a bois', price:9, category:'legumes', icon:'🏺', image:'', qty:628},
+  {id:'l16', name:'Pot de résine a bois', price:9, category:'legumes', icon:'🏺', image:'https://i.goopics.net/xw9aus.png', qty:628},
 ];
 
 // Recettes de transformation : déclarer X unités d'un produit transformé
@@ -555,6 +555,7 @@ let state = {
   partnerModalOpen:false,
   cartonsResetMeta:{lastResetAt:null},
   primeResetAt:null,
+  selectedHarvestProduct:null,
   partnerships:[],
   production:{},
   harvests:[],
@@ -606,7 +607,7 @@ async function loadAll(){
   });
 
   // Correctif ponctuel : mise à jour des photos Poivre / Huile de tournesol sur les données déjà en base
-  const photoFix = {l11:'https://i.goopics.net/r05iuo.png', l12:'https://i.goopics.net/rpt8do.png'};
+  const photoFix = {l11:'https://i.goopics.net/r05iuo.png', l12:'https://i.goopics.net/rpt8do.png', l16:'https://i.goopics.net/xw9aus.png'};
   Object.entries(photoFix).forEach(([id, url])=>{
     const item = state.catalog.find(p=>p.id===id);
     if(item) item.image = url;
@@ -1200,6 +1201,15 @@ function stockEmployesPanel(){
 
 function historiquePanel(){
   const history = [...state.exportHistory].sort((a,b)=> new Date(b.date)-new Date(a.date));
+
+  // Répartition du matériel utilisé par cultivateur lors des déclarations de récolte
+  const materialTotals = {};
+  state.harvests.forEach(h=>{
+    if(!materialTotals[h.username]) materialTotals[h.username] = {};
+    materialTotals[h.username][h.material] = (materialTotals[h.username][h.material]||0) + 1;
+  });
+  const materialUsers = Object.keys(materialTotals).sort();
+
   return `
   <h2>Historique des exportations</h2>
   <div class="table-scroll">
@@ -1214,6 +1224,26 @@ function historiquePanel(){
         <td style="color:var(--leaf); font-weight:700;">+${h.amount}</td>
         <td style="font-family:'Space Grotesk',monospace; font-weight:700;">${h.totalAfter}/200</td>
       </tr>`).join('')}
+    </tbody>
+  </table>
+  </div>
+
+  <h2 style="margin-top:40px;">🧺 Matériel utilisé par les cultivateurs</h2>
+  <p class="muted" style="margin-bottom:16px;">Nombre de déclarations de récolte par type de matériel (caisses, sacs, panier...) pour chaque employé.</p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Employé</th>${HARVEST_MATERIALS.map(m=>`<th>${esc(m)}</th>`).join('')}<th>Total</th></tr></thead>
+    <tbody>
+      ${materialUsers.length===0 ? `<tr><td colspan="${HARVEST_MATERIALS.length+2}" class="muted">Aucune récolte déclarée pour le moment.</td></tr>` : materialUsers.map(u=>{
+        const row = materialTotals[u];
+        const total = Object.values(row).reduce((s,n)=>s+n,0);
+        return `
+      <tr>
+        <td style="font-weight:600;">${esc(u)}</td>
+        ${HARVEST_MATERIALS.map(m=>`<td style="font-family:'Space Grotesk',monospace; text-align:center; ${row[m]?'color:var(--leaf); font-weight:700;':'color:var(--ink-soft);'}">${row[m]||0}</td>`).join('')}
+        <td style="font-family:'Space Grotesk',monospace; font-weight:800; color:var(--amber);">${total}</td>
+      </tr>`;
+      }).join('')}
     </tbody>
   </table>
   </div>`;
@@ -1258,16 +1288,21 @@ function recoltePanel(){
     .filter(h=>h.username===state.auth.username)
     .sort((a,b)=> new Date(b.date)-new Date(a.date));
   const totalMine = myHarvests.reduce((s,h)=> s + (h.qty||0), 0);
+  const selectedId = state.selectedHarvestProduct || (state.catalog[0] && state.catalog[0].id) || null;
 
   return `
   <h2>🌾 Déclarer une récolte</h2>
-  <p class="muted" style="margin-bottom:24px;">Indiquez le produit récolté, le matériel utilisé et la quantité. Cela alimente le stock de la ferme et votre score dans la Course à la prime.</p>
+  <p class="muted" style="margin-bottom:24px;">Sélectionnez le produit récolté, le matériel utilisé et la quantité. Cela alimente le stock de la ferme et votre score dans la Course à la prime.</p>
 
   <div class="field">
     <label>Produit récolté</label>
-    <select id="harvestProductSelect">
-      ${state.catalog.map(p=>`<option value="${p.id}">${esc(p.icon||'')} ${esc(p.name)}</option>`).join('')}
-    </select>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:12px; margin-top:8px;">
+      ${state.catalog.map(p=>`
+      <button type="button" data-harvestproduct="${p.id}" title="${esc(p.name)}" style="display:flex; flex-direction:column; align-items:center; gap:8px; padding:10px 8px; border-radius:14px; border:2px solid ${selectedId===p.id?'var(--leaf)':'var(--line)'}; background:${selectedId===p.id?'rgba(130,163,94,0.14)':'var(--panel-2)'}; cursor:pointer; transition:all .15s ease;">
+        <div style="width:56px; height:56px; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.03); flex-shrink:0;">${iconHtml(p,56)}</div>
+        <span style="font-size:12px; text-align:center; color:var(--ink); font-weight:600; line-height:1.2;">${esc(p.name)}</span>
+      </button>`).join('')}
+    </div>
   </div>
   <div class="field">
     <label>Matériel utilisé</label>
@@ -2121,6 +2156,7 @@ function attachEvents(){
   if(resetPrimeBtn) resetPrimeBtn.onclick = onResetPrime;
   const submitHarvestBtn = document.getElementById('submitHarvestBtn');
   if(submitHarvestBtn) submitHarvestBtn.onclick = onSubmitHarvest;
+  document.querySelectorAll('[data-harvestproduct]').forEach(b=>b.onclick=()=>setState({selectedHarvestProduct:b.dataset.harvestproduct}));
 
   // Stock additions (Inventaire global)
   const openAddStockBtn = document.getElementById('openAddStockBtn');
@@ -2524,7 +2560,7 @@ async function onResetPrime(){
 
 function onSubmitHarvest(){
   const err = document.getElementById('harvestErr');
-  const pid = document.getElementById('harvestProductSelect').value;
+  const pid = state.selectedHarvestProduct || (state.catalog[0] && state.catalog[0].id);
   const material = document.getElementById('harvestMaterialSelect').value;
   const qty = parseInt(document.getElementById('harvestQtyInput').value, 10);
   if(!pid || !material || isNaN(qty) || qty<=0){
