@@ -23,6 +23,7 @@
     --rust: #C06A3B;
     --leaf: #82A35E;
     --leaf-dark: #658245;
+    --leaf-light: #A6E86B;
     --danger: #E06C53;
     --radius: 16px;
     --radius-lg: 24px;
@@ -32,7 +33,7 @@
   body{
     background:linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 100%);
     color:var(--ink);
-    font-family:'Plus Jakarta Sans', sans-serif;
+    font-family:'Outfit', sans-serif;
     min-height:100vh;
   }
   #bgArt{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; background-size:cover; background-position:center; background-repeat:no-repeat;}
@@ -76,7 +77,7 @@
     display:inline-flex; align-items:center; justify-content:center;
     min-width:18px; height:18px; padding:0 5px; margin-left:8px;
     background:var(--danger); color:#fff; font-size:11px; font-weight:800;
-    border-radius:100px; font-family:'Space Grotesk',monospace; vertical-align:middle;
+    border-radius:100px; font-family:'Outfit', sans-serif; vertical-align:middle;
     box-shadow:0 2px 6px rgba(224,108,83,0.5);
   }
 
@@ -137,7 +138,7 @@
   .stepper button:hover{background:var(--leaf); color:#fff;}
   .stepper input.qty-input{
     width:44px; text-align:center; border:none; border-radius:0; background:transparent;
-    padding:0; font-weight:600; font-size:15px; font-family:'Space Grotesk',monospace; color:var(--ink);
+    padding:0; font-weight:600; font-size:15px; font-family:'Outfit', sans-serif; color:var(--ink);
     -moz-appearance:textfield;
   }
   .stepper input.qty-input::-webkit-outer-spin-button,
@@ -147,7 +148,7 @@
   .product-card .add-btn {
     background: rgba(130,163,94,0.1); color: var(--leaf); border: 1px solid rgba(130,163,94,0.25); 
     border-radius: 12px; padding: 14px 0; font-weight: 700; font-size: 14px; 
-    transition: all .2s ease; margin-top: auto; font-family:'Plus Jakarta Sans',sans-serif;
+    transition: all .2s ease; margin-top: auto; font-family:'Outfit', sans-serif;
   }
   .product-card .add-btn:hover { background: var(--leaf); color: #fff; border-color:var(--leaf); box-shadow: 0 4px 12px rgba(130,163,94,0.3); }
   .empty-note{color:var(--ink-soft); font-size:15px; padding:40px 0; text-align:center; grid-column: 1/-1;}
@@ -167,7 +168,7 @@
     z-index:40; transition: transform 0.2s;
   }
   .cart-fab:hover { transform: scale(1.05); }
-  .cart-fab .badge{background:#1B1D16; color:var(--amber); border-radius:100px; padding:2px 10px; font-size:13px; font-family:'Space Grotesk',monospace; font-weight:700;}
+  .cart-fab .badge{background:#1B1D16; color:var(--amber); border-radius:100px; padding:2px 10px; font-size:13px; font-family:'Outfit', sans-serif; font-weight:700;}
   .refresh-fab{
     position:fixed; bottom:32px; right:32px; width:52px; height:52px; background:var(--panel-2); color:var(--ink);
     border:1px solid var(--line); border-radius:100%; display:flex; align-items:center; justify-content:center;
@@ -188,12 +189,12 @@
   .cart-item .ci-icon{font-size:24px;}
   .cart-item .ci-info{flex:1;}
   .cart-item .ci-info .n{font-weight:700; font-size:15px; font-family:'Outfit',sans-serif; margin-bottom:4px;}
-  .cart-item .ci-info .p{font-family:'Space Grotesk',monospace; font-size:13px; color:var(--ink-soft); font-weight:500;}
+  .cart-item .ci-info .p{font-family:'Outfit', sans-serif; font-size:13px; color:var(--ink-soft); font-weight:500;}
   .cart-item button.rm{background:none; border:none; color:var(--danger); font-size:22px; font-weight:500; transition: color 0.2s; padding: 0 8px;}
   .cart-item button.rm:hover{color:#fff;}
   .cart-total{display:flex; justify-content:space-between; align-items:center; padding:20px 0; border-top:1px solid var(--line); margin-top:12px;}
   .cart-total span:first-child{font-family:'Outfit',sans-serif; font-size:16px; color:var(--ink-soft); font-weight:600;}
-  .cart-total .amt{font-size:28px; font-weight:700; color:var(--amber); font-family:'Space Grotesk',monospace;}
+  .cart-total .amt{font-size:28px; font-weight:700; color:var(--amber); font-family:'Outfit', sans-serif;}
 
   /* ---------- FORMULAIRES ---------- */
   label {
@@ -202,7 +203,7 @@
   }
   input, select, textarea {
     width: 100%; padding: 14px 16px; border: 1.5px solid var(--line); border-radius: 12px;
-    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; 
+    font-family:'Outfit', sans-serif; font-size: 15px; 
     background: rgba(255,255,255,0.02); color: var(--ink);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
@@ -238,13 +239,23 @@
   .admin-shell{display:grid; grid-template-columns:220px 1fr; gap:24px;}
   .admin-side{background:var(--panel-2); border:1px solid var(--line); border-radius:var(--radius); padding:20px; height:fit-content;}
   .admin-side button{
-    display:block; width:100%; text-align:left; background:none; border:none; color:var(--ink-soft);
-    padding:12px 16px; border-radius:10px; font-size:14px; font-weight:600; margin-bottom:6px; 
-    transition: all 0.2s;
+    display:block; width:100%; text-align:left; background:rgba(0,0,0,0.18); border:1.5px solid var(--line); color:var(--ink-soft);
+    padding:12px 16px; border-radius:12px; font-size:14px; font-weight:600; margin-bottom:8px; 
+    transition: all 0.2s ease;
   }
-  .admin-side button.active{background:var(--amber); color:#1B1D16; box-shadow: 0 4px 12px rgba(226,176,80,0.2);}
-  .admin-side button:hover:not(.active){background: rgba(255,255,255,0.05); color:var(--ink);}
-  .admin-side .who{color:var(--ink-soft); font-size:12px; font-family:'Space Grotesk',monospace; padding:0 12px 16px; border-bottom:1px solid var(--line); margin-bottom:12px;}
+  .admin-side button.active{
+    background:rgba(166,232,107,0.1); border-color:var(--leaf-light); color:var(--leaf-light);
+    box-shadow: 0 0 0 1px var(--leaf-light), 0 0 18px rgba(166,232,107,0.55);
+  }
+  .admin-side button:hover:not(.active):not(.logout){
+    background:rgba(166,232,107,0.06); border-color:var(--leaf-light); color:var(--ink);
+    box-shadow: 0 0 0 1px rgba(166,232,107,0.5), 0 0 14px rgba(166,232,107,0.35);
+  }
+  .admin-side button.logout:hover{
+    background:rgba(224,108,83,0.08); border-color:var(--danger); color:var(--danger);
+    box-shadow: 0 0 0 1px var(--danger), 0 0 14px rgba(224,108,83,0.35);
+  }
+  .admin-side .who{color:var(--ink-soft); font-size:12px; font-family:'Outfit', sans-serif; padding:0 12px 16px; border-bottom:1px solid var(--line); margin-bottom:12px;}
   .admin-side .logout{color:var(--danger); margin-top:16px; border-top:1px solid var(--line); padding-top:16px;}
   
   .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:32px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);}
@@ -254,7 +265,7 @@
   th{text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-soft); font-family:'Outfit',sans-serif; font-weight:700; padding:12px; border-bottom:1px solid var(--line);}
   td{padding:16px 12px; border-bottom:1px solid var(--line-soft); vertical-align:middle;}
   tr:last-child td{border-bottom:none;}
-  .mini-input{width:90px; padding:10px; font-family:'Space Grotesk',monospace;}
+  .mini-input{width:90px; padding:10px; font-family:'Outfit', sans-serif;}
   .row-actions{display:flex; gap:8px;}
   
   .icon-btn{border:none; background:var(--panel-3); color:var(--ink); border-radius:10px; padding:10px 16px; font-size:13.5px; font-weight:600; transition:all 0.2s;}
@@ -310,7 +321,7 @@
   .expense-status.approuvee{background:rgba(130,163,94,0.15); color:var(--leaf);}
   .expense-status.refusee{background:rgba(224,108,83,0.15); color:var(--danger);}
   .accounts-list .acc-row{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border:1px solid var(--line); border-radius:12px; margin-bottom:10px; background:var(--panel-2); flex-wrap:wrap; gap:10px;}
-  .role-badge{font-family:'Space Grotesk',monospace; font-size:11px; padding:4px 10px; border-radius:8px; background:var(--panel-3); color:var(--amber); border:1px solid var(--line);}
+  .role-badge{font-family:'Outfit', sans-serif; font-size:11px; padding:4px 10px; border-radius:8px; background:var(--panel-3); color:var(--amber); border:1px solid var(--line);}
   
   input[type="checkbox"]{width:auto; accent-color:var(--amber); margin:0; transform: scale(1.2);}
   .checkbox-row{display:flex; align-items:center; gap:10px; margin-top:-4px; margin-bottom:16px;}
@@ -358,12 +369,12 @@
   }
   .contact-name{font-weight:700; font-family:'Outfit', sans-serif; font-size:18px;}
   .contact-role{font-size:13px; color:var(--ink-soft); margin:4px 0 6px;}
-  .contact-phone{font-family:'Space Grotesk',monospace; font-weight:600; font-size:15px; color:var(--amber); text-decoration:none;}
+  .contact-phone{font-family:'Outfit', sans-serif; font-weight:600; font-size:15px; color:var(--amber); text-decoration:none;}
   .contact-phone:hover{text-decoration:underline;}
 
   /* --- STYLE INDICATEUR VERT --- */
   .production-indicator {
-    font-family: 'Space Grotesk', monospace; 
+    font-family:'Outfit', sans-serif; 
     font-size: 56px; 
     font-weight: 700; 
     color: #34D399; 
@@ -555,6 +566,7 @@ let state = {
   partnerModalOpen:false,
   cartonsResetMeta:{lastResetAt:null},
   primeResetAt:null,
+  materialResetAt:null,
   selectedHarvestProduct:null,
   partnerships:[],
   production:{},
@@ -563,6 +575,7 @@ let state = {
   catalog:[],
   orders:[],
   accounts:[],
+  trustedPersons:[],
   expenseReports:[],
   applications:[],
   customPricing:{},
@@ -626,6 +639,11 @@ async function loadAll(){
   }catch(e){ state.accounts = []; }
 
   try{
+    const tp = await window.storage.get('trustedPersons', true);
+    state.trustedPersons = tp ? JSON.parse(tp.value) : [];
+  }catch(e){ state.trustedPersons = []; }
+
+  try{
     const er = await window.storage.get('expenseReports', true);
     state.expenseReports = er ? JSON.parse(er.value) : [];
   }catch(e){ state.expenseReports = []; }
@@ -671,6 +689,11 @@ async function loadAll(){
   }catch(e){ state.primeResetAt = null; }
 
   try{
+    const mr = await window.storage.get('materialResetAt', true);
+    state.materialResetAt = mr ? JSON.parse(mr.value) : null;
+  }catch(e){ state.materialResetAt = null; }
+
+  try{
     const pt = await window.storage.get('partnerships', true);
     state.partnerships = pt ? JSON.parse(pt.value) : [];
   }catch(e){ state.partnerships = []; }
@@ -714,6 +737,7 @@ async function loadAll(){
 async function saveCatalog(){ try{ await window.storage.set('catalog', JSON.stringify(state.catalog), true);}catch(e){ toast('Erreur'); } }
 async function saveOrders(){ try{ await window.storage.set('orders', JSON.stringify(state.orders), true);}catch(e){ toast('Erreur'); } }
 async function saveAccounts(){ try{ await window.storage.set('accounts', JSON.stringify(state.accounts), true);}catch(e){ toast('Erreur'); } }
+async function saveTrustedPersons(){ try{ await window.storage.set('trustedPersons', JSON.stringify(state.trustedPersons), true);}catch(e){ toast('Erreur'); } }
 async function saveExpenseReports(){ try{ await window.storage.set('expenseReports', JSON.stringify(state.expenseReports), true);}catch(e){ toast('Erreur'); } }
 async function saveCustomPricing(){ try{ await window.storage.set('customPricing', JSON.stringify(state.customPricing), true);}catch(e){ toast('Erreur'); } }
 async function saveApplications(){ try{ await window.storage.set('applications', JSON.stringify(state.applications), true);}catch(e){ toast('Erreur'); } }
@@ -731,6 +755,7 @@ async function setAccountStock(username, maxCartons){
 }
 async function saveCartonsResetMeta(){ try{ await window.storage.set('cartonsResetMeta', JSON.stringify(state.cartonsResetMeta), true);}catch(e){} }
 async function savePrimeResetAt(){ try{ await window.storage.set('primeResetAt', JSON.stringify(state.primeResetAt), true);}catch(e){ toast('Erreur'); } }
+async function saveMaterialResetAt(){ try{ await window.storage.set('materialResetAt', JSON.stringify(state.materialResetAt), true);}catch(e){ toast('Erreur'); } }
 async function saveLastSeenOrders(){ try{ await window.storage.set('lastSeenOrders', JSON.stringify(state.lastSeenOrders), true);}catch(e){ /* silencieux */ } }
 
 /* Nombre de commandes pas encore consultées par l'utilisateur connecté (rh, commercial, patron) */
@@ -881,7 +906,7 @@ function render(){
 
   root.innerHTML = `
     ${header()}
-    ${state.view==='shop' ? shopView() : state.view==='mesCommandes' ? mesCommandesView() : state.view==='patron' ? patronView() : state.view==='employeeHome' ? employeeHomeView() : adminView()}
+    ${state.view==='shop' ? shopView() : state.view==='mesCommandes' ? mesCommandesView() : state.view==='monEspace' ? monEspaceView() : state.view==='patron' ? patronView() : state.view==='employeeHome' ? employeeHomeView() : adminView()}
     ${state.cartOpen ? cartDrawer() : ''}
     ${state.toast ? `<div class="toast">${esc(state.toast)}</div>` : ''}
     ${state.view==='shop' ? `<button class="cart-fab" id="openCart">🧺 Panier ${cartCount()>0?`<span class="badge">${cartCount()}</span>`:''}</button>` : ''}
@@ -911,6 +936,7 @@ function header(){
         ${isCustomerLike ? `
           <button data-nav="shop" class="${state.view==='shop'?'active':''}">Boutique</button>
           <button data-nav="mesCommandes" class="${state.view==='mesCommandes'?'active':''}">Mes commandes</button>
+          <button data-nav="monEspace" class="${state.view==='monEspace'?'active':''}">Mon espace</button>
           ${canAdmin ? `<button data-nav="admin" class="${state.view==='admin'?'active':''}">Espace admin</button>` : ''}
         ` : ''}
         ${isPatron ? `<button data-nav="patron" class="${state.view==='patron'?'active':''}">Espace patron</button>` : ''}
@@ -1056,11 +1082,52 @@ function mesCommandesView(){
   `;
 }
 
+function monEspaceView(){
+  const myTrusted = state.trustedPersons.filter(t=>t.username===state.auth.username);
+  return `
+  <h2 style="margin-bottom:24px;">🪪 Mon espace</h2>
+
+  <div class="card" style="margin-bottom:24px; align-items:stretch; flex-direction:column; display:flex;">
+    <h3 style="margin-bottom:4px;">🤝 Personnes de confiance</h3>
+    <p class="muted" style="margin-bottom:20px;">Enregistrez les personnes autorisées à récupérer vos commandes ou effectuer des paiements en votre nom.</p>
+
+    <div class="add-form" style="grid-template-columns:1fr 1fr 1fr 1fr auto;">
+      <div class="field"><label>Nom</label><input id="tpNom" placeholder="Ex : Dupont" /></div>
+      <div class="field"><label>Prénom</label><input id="tpPrenom" placeholder="Ex : Marie" /></div>
+      <div class="field"><label>Numéro</label><input id="tpPhone" placeholder="Ex : 06 12 34 56 78" /></div>
+      <div class="field"><label>IBAN</label><input id="tpIban" placeholder="Ex : FR76..." /></div>
+      <button class="primary-btn" id="addTrustedBtn" style="width:auto; padding:14px 22px; white-space:nowrap;">+ Ajouter</button>
+    </div>
+
+    ${myTrusted.length===0 ? `<p class="muted" style="margin-top:12px;">Aucune personne de confiance enregistrée.</p>` : myTrusted.map(t=>`
+      <div class="card" style="margin-top:12px; flex-direction:row; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-weight:700; font-size:16px;">${esc(t.prenom)} ${esc(t.nom)}</div>
+          <div class="muted" style="font-size:13px; margin-top:2px;">📞 ${esc(t.phone||'—')} &nbsp;•&nbsp; 🏦 ${esc(t.iban||'—')}</div>
+        </div>
+        <button class="icon-btn del" data-deltrusted="${t.id}">Supprimer</button>
+      </div>`).join('')}
+  </div>
+
+  <div class="card" style="align-items:stretch; flex-direction:column; display:flex;">
+    <h3 style="margin-bottom:4px;">🔒 Changer le mot de passe</h3>
+    <p class="muted" style="margin-bottom:20px;">Modifiez le mot de passe du compte "${esc(state.auth.username)}".</p>
+
+    <div class="field"><label>Mot de passe actuel</label><div style="position:relative;"><input id="pwCurrent" type="password" placeholder="••••••••" style="padding-right:44px;" /><button type="button" id="togglePwCurrent" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:17px; padding:4px; line-height:1;">👁️</button></div><span id="capsWarn-pwCurrent" style="display:none; color:var(--amber); font-size:12px; font-weight:600; margin-top:4px;">⚠️ Verr. Maj. activé</span></div>
+    <div class="field"><label>Nouveau mot de passe</label><div style="position:relative;"><input id="pwNew" type="password" placeholder="••••••••" style="padding-right:44px;" /><button type="button" id="togglePwNew" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:17px; padding:4px; line-height:1;">👁️</button></div><span id="capsWarn-pwNew" style="display:none; color:var(--amber); font-size:12px; font-weight:600; margin-top:4px;">⚠️ Verr. Maj. activé</span></div>
+    <div class="field"><label>Confirmer le nouveau mot de passe</label><div style="position:relative;"><input id="pwConfirm" type="password" placeholder="••••••••" style="padding-right:44px;" /><button type="button" id="togglePwConfirm" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:17px; padding:4px; line-height:1;">👁️</button></div><span id="capsWarn-pwConfirm" style="display:none; color:var(--amber); font-size:12px; font-weight:600; margin-top:4px;">⚠️ Verr. Maj. activé</span></div>
+    <div id="pwErr" class="err" style="display:none;"></div>
+    <button class="primary-btn" id="changePwBtn" style="width:auto; padding:14px 28px;">Mettre à jour le mot de passe</button>
+  </div>
+  `;
+}
+
 function patronView(){
   const content = state.patronTab==='exportation' ? cartonsPanel()
     : state.patronTab==='inventaire' ? inventairePanel()
     : `<div class="panel">${
         state.patronTab==='commandes' ? commandesPanel()
+        : state.patronTab==='logistique' ? logistiquePanel()
         : state.patronTab==='historique' ? historiquePanel()
         : state.patronTab==='partenariat' ? partnershipsPanel()
         : state.patronTab==='classement' ? courseALaPrimePanel()
@@ -1075,6 +1142,7 @@ function patronView(){
       <button data-ptab="exportation" class="${state.patronTab==='exportation'?'active':''}">📦 Exportation</button>
       <button data-ptab="stockEmp" class="${state.patronTab==='stockEmp'?'active':''}">🏷️ Stock employés</button>
       <button data-ptab="inventaire" class="${state.patronTab==='inventaire'?'active':''}">🌱 Inventaire</button>
+      <button data-ptab="logistique" class="${state.patronTab==='logistique'?'active':''}">📦 Logistique</button>
       <button data-ptab="commandes" class="${state.patronTab==='commandes'?'active':''}">🧾 Commandes${orderTabBadge()}</button>
       <button data-ptab="partenariat" class="${state.patronTab==='partenariat'?'active':''}">🤝 Partenariat</button>
       <button data-ptab="notefrais" class="${state.patronTab==='notefrais'?'active':''}">📋 Note de Frais</button>
@@ -1103,7 +1171,7 @@ function cartonsPanel(){
       <div class="panel" style="padding:24px;">
         <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-soft); font-weight:700; margin-bottom:10px;">Quota hebdo</div>
         <div style="font-family:'Outfit',sans-serif; font-weight:800; font-size:34px; color:var(--ink);">${pct}%</div>
-        <div style="color:var(--ink-soft); font-size:13px; margin-top:6px; font-family:'Space Grotesk',monospace;">${current}/200 Cartons</div>
+        <div style="color:var(--ink-soft); font-size:13px; margin-top:6px; font-family:'Outfit', sans-serif;">${current}/200 Cartons</div>
       </div>
       <div class="panel" style="padding:24px;">
         <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-soft); font-weight:700; margin-bottom:10px;">Exploitation</div>
@@ -1169,7 +1237,7 @@ function stockEmployesPanel(){
     <tr>
       <td style="font-weight:700;">🚜 ${esc(a.username)}</td>
       <td><span class="role-badge">${esc(roleLabel(a.role))}</span></td>
-      <td style="font-family:'Space Grotesk',monospace; font-weight:700;">${current}/200</td>
+      <td style="font-family:'Outfit', sans-serif; font-weight:700;">${current}/200</td>
       <td style="min-width:140px;">
         <div style="background:rgba(255,255,255,0.05); border-radius:100px; height:8px; overflow:hidden;">
           <div style="width:${pct}%; height:100%; background:${barColor};"></div>
@@ -1201,15 +1269,6 @@ function stockEmployesPanel(){
 
 function historiquePanel(){
   const history = [...state.exportHistory].sort((a,b)=> new Date(b.date)-new Date(a.date));
-
-  // Répartition du matériel utilisé par cultivateur lors des déclarations de récolte
-  const materialTotals = {};
-  state.harvests.forEach(h=>{
-    if(!materialTotals[h.username]) materialTotals[h.username] = {};
-    materialTotals[h.username][h.material] = (materialTotals[h.username][h.material]||0) + 1;
-  });
-  const materialUsers = Object.keys(materialTotals).sort();
-
   return `
   <h2>Historique des exportations</h2>
   <div class="table-scroll">
@@ -1218,18 +1277,36 @@ function historiquePanel(){
     <tbody>
       ${history.length===0 ? `<tr><td colspan="5" class="muted">Aucune exportation enregistrée.</td></tr>` : history.map(h=>`
       <tr>
-        <td style="font-family:'Space Grotesk',monospace;">${new Date(h.date).toLocaleString('fr-FR')}</td>
+        <td style="font-family:'Outfit', sans-serif;">${new Date(h.date).toLocaleString('fr-FR')}</td>
         <td style="font-weight:600;">${esc(h.username)}</td>
         <td><span class="role-badge">${esc(h.role)}</span></td>
         <td style="color:var(--leaf); font-weight:700;">+${h.amount}</td>
-        <td style="font-family:'Space Grotesk',monospace; font-weight:700;">${h.totalAfter}/200</td>
+        <td style="font-family:'Outfit', sans-serif; font-weight:700;">${h.totalAfter}/200</td>
       </tr>`).join('')}
     </tbody>
   </table>
-  </div>
+  </div>`;
+}
 
-  <h2 style="margin-top:40px;">🧺 Matériel utilisé par les cultivateurs</h2>
-  <p class="muted" style="margin-bottom:16px;">Nombre de déclarations de récolte par type de matériel (caisses, sacs, panier...) pour chaque employé.</p>
+function logistiquePanel(){
+  const resetAt = state.materialResetAt ? new Date(state.materialResetAt) : null;
+
+  // Répartition du matériel utilisé par cultivateur lors des déclarations de récolte
+  const materialTotals = {};
+  state.harvests
+    .filter(h => !resetAt || new Date(h.date) > resetAt)
+    .forEach(h=>{
+      if(!materialTotals[h.username]) materialTotals[h.username] = {};
+      materialTotals[h.username][h.material] = (materialTotals[h.username][h.material]||0) + 1;
+    });
+  const materialUsers = Object.keys(materialTotals).sort();
+
+  return `
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:8px;">
+    <h2 style="margin:0;">📦 Logistique</h2>
+    <button class="icon-btn del" id="resetMaterialBtn">🔄 Réinitialiser</button>
+  </div>
+  <p class="muted" style="margin-bottom:16px;">Nombre de déclarations de récolte par type de matériel (caisses, sacs, panier...) pour chaque employé${resetAt ? ` depuis le ${resetAt.toLocaleString('fr-FR')}` : ''}.</p>
   <div class="table-scroll">
   <table>
     <thead><tr><th>Employé</th>${HARVEST_MATERIALS.map(m=>`<th>${esc(m)}</th>`).join('')}<th>Total</th></tr></thead>
@@ -1240,8 +1317,8 @@ function historiquePanel(){
         return `
       <tr>
         <td style="font-weight:600;">${esc(u)}</td>
-        ${HARVEST_MATERIALS.map(m=>`<td style="font-family:'Space Grotesk',monospace; text-align:center; ${row[m]?'color:var(--leaf); font-weight:700;':'color:var(--ink-soft);'}">${row[m]||0}</td>`).join('')}
-        <td style="font-family:'Space Grotesk',monospace; font-weight:800; color:var(--amber);">${total}</td>
+        ${HARVEST_MATERIALS.map(m=>`<td style="font-family:'Outfit', sans-serif; text-align:center; ${row[m]?'color:var(--leaf); font-weight:700;':'color:var(--ink-soft);'}">${row[m]||0}</td>`).join('')}
+        <td style="font-family:'Outfit', sans-serif; font-weight:800; color:var(--amber);">${total}</td>
       </tr>`;
       }).join('')}
     </tbody>
@@ -1276,7 +1353,7 @@ function courseALaPrimePanel(){
       <tr>
         <td><span style="font-size:18px; font-weight:bold; color:${index===0?'#FFD700':index===1?'#C0C0C0':index===2?'#CD7F32':'var(--ink-soft)'};">#${index+1}</span></td>
         <td style="font-weight:600; font-size:16px;">${esc(entry[0])}</td>
-        <td style="font-family:'Space Grotesk',monospace; font-weight:700; color:var(--leaf); font-size:16px;">${entry[1]}</td>
+        <td style="font-family:'Outfit', sans-serif; font-weight:700; color:var(--leaf); font-size:16px;">${entry[1]}</td>
       </tr>`).join('')}
     </tbody>
   </table>
@@ -1554,7 +1631,7 @@ function employeeAccountsPanel(){
   <h2>Comptes & Rôles</h2>
   <div class="add-form" style="grid-template-columns:1fr 1fr 1fr auto;">
     <div class="field"><label>Identifiant</label><input id="empUser" placeholder="ex : julie" /></div>
-    <div class="field"><label>Mot de passe</label><input id="empPass" type="password" placeholder="••••••••" /></div>
+    <div class="field"><label>Mot de passe</label><div style="position:relative;"><input id="empPass" type="password" placeholder="••••••••" style="padding-right:44px;" /><button type="button" id="toggleEmpPass" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:17px; padding:4px; line-height:1;">👁️</button></div><span id="capsWarn-empPass" style="display:none; color:var(--amber); font-size:12px; font-weight:600; margin-top:4px;">⚠️ Verr. Maj. activé</span></div>
     <div class="field"><label>Rôle</label>
       <input id="empRole" type="text" placeholder="cultivateur, patron, etc..." list="roleSuggestions" />
       <datalist id="roleSuggestions">
@@ -1596,6 +1673,7 @@ function employeeHomeView(){
   const roleLabel = {cultivateur:'Cultivateur', commercial:'Commercial', rh:'RH'}[role] || role;
   const canInventaire = role==='commercial' || role==='rh';
   const canRecolte = role==='cultivateur';
+  const canLogistique = role==='rh';
   const canCandidatures = role==='rh';
   const canCommandes = role==='commercial' || role==='rh';
   const canNoteFrais = role==='commercial' || role==='rh';
@@ -1603,6 +1681,7 @@ function employeeHomeView(){
     : state.employeeTab==='inventaire' && canInventaire ? inventairePanel()
     : `<div class="panel">${
         state.employeeTab==='recolte' && canRecolte ? recoltePanel()
+        : state.employeeTab==='logistique' && canLogistique ? logistiquePanel()
         : state.employeeTab==='historique' ? historiquePanel()
         : state.employeeTab==='classement' ? courseALaPrimePanel()
         : state.employeeTab==='candidatures' && canCandidatures ? candidaturesPanel()
@@ -1618,6 +1697,7 @@ function employeeHomeView(){
       <button data-etab="exportation" class="${state.employeeTab==='exportation'?'active':''}">📦 Exportation</button>
       ${canInventaire ? `<button data-etab="inventaire" class="${state.employeeTab==='inventaire'?'active':''}">🌱 Inventaire</button>` : ''}
       ${canRecolte ? `<button data-etab="recolte" class="${state.employeeTab==='recolte'?'active':''}">🌾 Récolte</button>` : ''}
+      ${canLogistique ? `<button data-etab="logistique" class="${state.employeeTab==='logistique'?'active':''}">📦 Logistique</button>` : ''}
       ${canCommandes ? `<button data-etab="commandes" class="${state.employeeTab==='commandes'?'active':''}">🧾 Commandes${orderTabBadge()}</button>` : ''}
       ${canCandidatures ? `<button data-etab="candidatures" class="${state.employeeTab==='candidatures'?'active':''}">📋 Candidatures</button>` : ''}
       ${canNoteFrais ? `<button data-etab="notefrais" class="${state.employeeTab==='notefrais'?'active':''}">📋 Note de Frais</button>` : ''}
@@ -1788,7 +1868,7 @@ function loginGate(){
     <h2>Bon retour !</h2>
     <p class="sub">Veuillez renseigner vos identifiants pour accéder à votre espace.</p>
     <div class="field"><label>Identifiant</label><input id="loginUser" placeholder="Ex: client" /></div>
-    <div class="field"><label>Mot de passe</label><input id="loginPass" type="password" placeholder="••••••••" /></div>
+    <div class="field"><label>Mot de passe</label><div style="position:relative;"><input id="loginPass" type="password" placeholder="••••••••" style="padding-right:44px;" /><button type="button" id="toggleLoginPass" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:17px; padding:4px; line-height:1;">👁️</button></div><span id="capsWarn-loginPass" style="display:none; color:var(--amber); font-size:12px; font-weight:600; margin-top:4px;">⚠️ Verr. Maj. activé</span></div>
     ${state.loginErr ? `<div class="err">${esc(state.loginErr)}</div>` : ''}
     <button class="primary-btn" id="loginBtn">Se connecter</button>
   </div>`;
@@ -1858,7 +1938,7 @@ function renderPricingTable(username){
         <tr>
           <td>${iconHtml(p,36)}</td>
           <td style="font-weight:600;">${esc(p.name)}</td>
-          <td style="font-family:'Space Grotesk',monospace; color:var(--ink-soft); font-size:15px;">${p.price}$</td>
+          <td style="font-family:'Outfit', sans-serif; color:var(--ink-soft); font-size:15px;">${p.price}$</td>
           <td><input class="mini-input" data-cp="${p.id}" type="number" min="0" step="0.5" placeholder="${p.price}" value="${override!=null?override:''}" /></td>
           <td>${override!=null ? `<button class="icon-btn del" data-cpreset="${p.id}">Reset</button>` : ''}</td>
         </tr>`;
@@ -1930,13 +2010,13 @@ function commandesPanel(){
       <div class="admin-order-card" style="border-left: 4px solid ${borderColor};">
         <div class="aoc-header">
           <div>
-            <div style="font-size:13px; color:var(--ink-soft); font-family:'Space Grotesk',monospace; margin-bottom:4px;">Commande du ${new Date(o.date).toLocaleString('fr-FR')}</div>
+            <div style="font-size:13px; color:var(--ink-soft); font-family:'Outfit', sans-serif; margin-bottom:4px;">Commande du ${new Date(o.date).toLocaleString('fr-FR')}</div>
             <div class="aoc-client">${esc(o.client)}</div>
             <div style="font-size:14px; color:var(--ink-soft); margin-top:2px;">📞 ${esc(o.phone||'—')}</div>
             <div style="font-size:14px; color:var(--leaf); margin-top:4px; font-weight:600;">🚚 ${o.asap ? 'Dès que possible' : (o.desiredDate ? esc(o.desiredDate) : '—')}</div>
           </div>
           <div style="text-align:right;">
-            <div style="font-size:20px; font-weight:800; color:var(--amber); font-family:'Space Grotesk',monospace;">${o.total.toFixed(2)}$</div>
+            <div style="font-size:20px; font-weight:800; color:var(--amber); font-family:'Outfit', sans-serif;">${o.total.toFixed(2)}$</div>
           </div>
         </div>
         
@@ -1953,7 +2033,7 @@ function commandesPanel(){
         ${o.iban ? `
         <div style="margin:4px 0 16px; padding:12px 14px; background:rgba(130,163,94,0.08); border:1px solid rgba(130,163,94,0.25); border-radius:12px;">
           <div style="font-size:12px; font-weight:700; color:var(--leaf); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">🏦 IBAN (règlement par virement)</div>
-          <div style="font-size:14px; color:var(--ink); font-family:'Space Grotesk',monospace; font-weight:600; letter-spacing:0.5px;">${esc(o.iban)}</div>
+          <div style="font-size:14px; color:var(--ink); font-family:'Outfit', sans-serif; font-weight:600; letter-spacing:0.5px;">${esc(o.iban)}</div>
         </div>` : ''}
 
         <div style="display:flex; align-items:center; gap:12px; justify-content:space-between; flex-wrap:wrap;">
@@ -1989,7 +2069,7 @@ function comptesPanel(){
   <h2>Gestion des Accès</h2>
   <div class="add-form" style="grid-template-columns:1fr 1fr 1fr auto;">
     <div class="field"><label>Identifiant</label><input id="accUser" placeholder="ex : ClientVIP" /></div>
-    <div class="field"><label>Mot de passe</label><input id="accPass" type="password" placeholder="••••••••" /></div>
+    <div class="field"><label>Mot de passe</label><div style="position:relative;"><input id="accPass" type="password" placeholder="••••••••" style="padding-right:44px;" /><button type="button" id="toggleAccPass" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:17px; padding:4px; line-height:1;">👁️</button></div><span id="capsWarn-accPass" style="display:none; color:var(--amber); font-size:12px; font-weight:600; margin-top:4px;">⚠️ Verr. Maj. activé</span></div>
     <div class="field"><label>Type de compte</label>
       <select id="accRole">
         <option value="client">Client</option>
@@ -2013,9 +2093,49 @@ function comptesPanel(){
 }
 
 /* ---------------- events ---------------- */
+function attachCapsLockWatch(inputId){
+  const input = document.getElementById(inputId);
+  const warn = document.getElementById('capsWarn-'+inputId);
+  if(!input || !warn) return;
+  const check = (e)=>{
+    const isCaps = e.getModifierState && e.getModifierState('CapsLock');
+    warn.style.display = isCaps ? 'block' : 'none';
+  };
+  input.addEventListener('keydown', check);
+  input.addEventListener('keyup', check);
+  input.addEventListener('blur', ()=>{ warn.style.display = 'none'; });
+}
+
+function attachPasswordToggle(inputId, btnId){
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if(!input || !btn) return;
+  btn.onclick = ()=>{
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.textContent = show ? '🙈' : '👁️';
+  };
+}
+
 function attachEvents(){
   document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>setState({view:b.dataset.nav}));
   document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>setState({activeCat:b.dataset.cat}));
+
+  // Avertissement Verrouillage Majuscules sur les champs mot de passe
+  ['empPass','loginPass','accPass','pwCurrent','pwNew','pwConfirm'].forEach(attachCapsLockWatch);
+  attachPasswordToggle('empPass','toggleEmpPass');
+  attachPasswordToggle('loginPass','toggleLoginPass');
+  attachPasswordToggle('accPass','toggleAccPass');
+  attachPasswordToggle('pwCurrent','togglePwCurrent');
+  attachPasswordToggle('pwNew','togglePwNew');
+  attachPasswordToggle('pwConfirm','togglePwConfirm');
+
+  // Mon espace : personnes de confiance & mot de passe
+  const addTrustedBtn = document.getElementById('addTrustedBtn');
+  if(addTrustedBtn) addTrustedBtn.onclick = onAddTrustedPerson;
+  document.querySelectorAll('[data-deltrusted]').forEach(b=>b.onclick=()=>onDeleteTrustedPerson(b.dataset.deltrusted));
+  const changePwBtn = document.getElementById('changePwBtn');
+  if(changePwBtn) changePwBtn.onclick = onChangeMyPassword;
 
   const manualRefreshBtn = document.getElementById('manualRefreshBtn');
   if(manualRefreshBtn) manualRefreshBtn.onclick = onManualRefresh;
@@ -2154,6 +2274,8 @@ function attachEvents(){
 
   const resetPrimeBtn = document.getElementById('resetPrimeBtn');
   if(resetPrimeBtn) resetPrimeBtn.onclick = onResetPrime;
+  const resetMaterialBtn = document.getElementById('resetMaterialBtn');
+  if(resetMaterialBtn) resetMaterialBtn.onclick = onResetMaterial;
   const submitHarvestBtn = document.getElementById('submitHarvestBtn');
   if(submitHarvestBtn) submitHarvestBtn.onclick = onSubmitHarvest;
   document.querySelectorAll('[data-harvestproduct]').forEach(b=>b.onclick=()=>setState({selectedHarvestProduct:b.dataset.harvestproduct}));
@@ -2363,6 +2485,58 @@ function onClearExpenses(){
   }
 }
 
+function onAddTrustedPerson(){
+  const nom = document.getElementById('tpNom').value.trim();
+  const prenom = document.getElementById('tpPrenom').value.trim();
+  const phone = document.getElementById('tpPhone').value.trim();
+  const iban = document.getElementById('tpIban').value.trim();
+  if(!nom || !prenom){ toast('Veuillez indiquer au moins un nom et un prénom.'); return; }
+  state.trustedPersons.push({
+    id: 'tp_'+Date.now(),
+    username: state.auth.username,
+    nom, prenom, phone, iban
+  });
+  saveTrustedPersons();
+  toast('Personne de confiance ajoutée');
+  render();
+}
+
+function onDeleteTrustedPerson(id){
+  state.trustedPersons = state.trustedPersons.filter(t=>t.id!==id);
+  saveTrustedPersons();
+  toast('Personne de confiance supprimée');
+  render();
+}
+
+function onChangeMyPassword(){
+  const err = document.getElementById('pwErr');
+  const current = document.getElementById('pwCurrent').value;
+  const next = document.getElementById('pwNew').value;
+  const confirmPw = document.getElementById('pwConfirm').value;
+  const acc = state.accounts.find(a=>a.username===state.auth.username);
+
+  if(!acc || acc.password !== current){
+    err.style.display='block'; err.textContent = 'Le mot de passe actuel est incorrect.';
+    return;
+  }
+  if(!next || next.length < 4){
+    err.style.display='block'; err.textContent = 'Le nouveau mot de passe doit contenir au moins 4 caractères.';
+    return;
+  }
+  if(next !== confirmPw){
+    err.style.display='block'; err.textContent = 'Les deux mots de passe ne correspondent pas.';
+    return;
+  }
+
+  acc.password = next;
+  saveAccounts();
+  err.style.display='none';
+  document.getElementById('pwCurrent').value = '';
+  document.getElementById('pwNew').value = '';
+  document.getElementById('pwConfirm').value = '';
+  toast('Mot de passe mis à jour avec succès');
+}
+
 function onSubmitOrder(){
   const err = document.getElementById('orderErr');
   const cName = document.getElementById('clientName').value.trim();
@@ -2555,6 +2729,14 @@ async function onResetPrime(){
   state.primeResetAt = new Date().toISOString();
   await savePrimeResetAt();
   toast('Classement réinitialisé');
+  render();
+}
+
+async function onResetMaterial(){
+  if(!confirm("Réinitialiser le suivi du matériel utilisé ? L'historique des récoltes reste conservé, seul le tableau affiché repart à zéro.")) return;
+  state.materialResetAt = new Date().toISOString();
+  await saveMaterialResetAt();
+  toast('Suivi du matériel réinitialisé');
   render();
 }
 
