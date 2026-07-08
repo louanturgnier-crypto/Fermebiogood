@@ -1108,17 +1108,6 @@ function monEspaceView(){
         <button class="icon-btn del" data-deltrusted="${t.id}">Supprimer</button>
       </div>`).join('')}
   </div>
-
-  <div class="card" style="align-items:stretch; flex-direction:column; display:flex;">
-    <h3 style="margin-bottom:4px;">🔒 Changer le mot de passe</h3>
-    <p class="muted" style="margin-bottom:20px;">Modifiez le mot de passe du compte "${esc(state.auth.username)}".</p>
-
-    <div class="field"><label>Mot de passe actuel</label><div style="position:relative;"><input id="pwCurrent" type="password" placeholder="••••••••" style="padding-right:44px;" /><button type="button" id="togglePwCurrent" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:17px; padding:4px; line-height:1;">👁️</button></div><span id="capsWarn-pwCurrent" style="display:none; color:var(--amber); font-size:12px; font-weight:600; margin-top:4px;">⚠️ Verr. Maj. activé</span></div>
-    <div class="field"><label>Nouveau mot de passe</label><div style="position:relative;"><input id="pwNew" type="password" placeholder="••••••••" style="padding-right:44px;" /><button type="button" id="togglePwNew" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:17px; padding:4px; line-height:1;">👁️</button></div><span id="capsWarn-pwNew" style="display:none; color:var(--amber); font-size:12px; font-weight:600; margin-top:4px;">⚠️ Verr. Maj. activé</span></div>
-    <div class="field"><label>Confirmer le nouveau mot de passe</label><div style="position:relative;"><input id="pwConfirm" type="password" placeholder="••••••••" style="padding-right:44px;" /><button type="button" id="togglePwConfirm" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:17px; padding:4px; line-height:1;">👁️</button></div><span id="capsWarn-pwConfirm" style="display:none; color:var(--amber); font-size:12px; font-weight:600; margin-top:4px;">⚠️ Verr. Maj. activé</span></div>
-    <div id="pwErr" class="err" style="display:none;"></div>
-    <button class="primary-btn" id="changePwBtn" style="width:auto; padding:14px 28px;">Mettre à jour le mot de passe</button>
-  </div>
   `;
 }
 
@@ -1128,6 +1117,7 @@ function patronView(){
     : `<div class="panel">${
         state.patronTab==='commandes' ? commandesPanel()
         : state.patronTab==='logistique' ? logistiquePanel()
+        : state.patronTab==='annuaire' ? annuaireClientsPanel()
         : state.patronTab==='historique' ? historiquePanel()
         : state.patronTab==='partenariat' ? partnershipsPanel()
         : state.patronTab==='classement' ? courseALaPrimePanel()
@@ -1143,6 +1133,7 @@ function patronView(){
       <button data-ptab="stockEmp" class="${state.patronTab==='stockEmp'?'active':''}">🏷️ Stock employés</button>
       <button data-ptab="inventaire" class="${state.patronTab==='inventaire'?'active':''}">🌱 Inventaire</button>
       <button data-ptab="logistique" class="${state.patronTab==='logistique'?'active':''}">📦 Logistique</button>
+      <button data-ptab="annuaire" class="${state.patronTab==='annuaire'?'active':''}">📇 Annuaire clients</button>
       <button data-ptab="commandes" class="${state.patronTab==='commandes'?'active':''}">🧾 Commandes${orderTabBadge()}</button>
       <button data-ptab="partenariat" class="${state.patronTab==='partenariat'?'active':''}">🤝 Partenariat</button>
       <button data-ptab="notefrais" class="${state.patronTab==='notefrais'?'active':''}">📋 Note de Frais</button>
@@ -1288,6 +1279,33 @@ function historiquePanel(){
   </div>`;
 }
 
+function annuaireClientsPanel(){
+  const clientAccounts = state.accounts.filter(a=>a.role==='client');
+  const grouped = clientAccounts.map(c=>({
+    username: c.username,
+    persons: state.trustedPersons.filter(t=>t.username===c.username)
+  }));
+
+  return `
+  <h2>📇 Annuaire clients</h2>
+  <p class="muted" style="margin-bottom:20px;">Personnes de confiance enregistrées par chaque client (nom, prénom, numéro, IBAN).</p>
+  ${grouped.length===0 ? `<p class="muted">Aucun compte client enregistré.</p>` : grouped.map(g=>`
+    <div class="card" style="margin-bottom:16px; align-items:stretch;">
+      <div style="font-weight:800; font-size:17px;">👤 ${esc(g.username)}</div>
+      ${g.persons.length===0 ? `<p class="muted" style="font-size:14px; margin-top:4px;">Aucune personne de confiance enregistrée.</p>` : `
+      <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
+        ${g.persons.map(t=>`
+        <div style="padding:12px 14px; background:rgba(255,255,255,0.02); border:1px solid var(--line-soft); border-radius:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <div style="font-weight:700;">${esc(t.prenom)} ${esc(t.nom)}</div>
+            <div class="muted" style="font-size:13px; margin-top:2px;">📞 ${esc(t.phone||'—')} &nbsp;•&nbsp; 🏦 ${esc(t.iban||'—')}</div>
+          </div>
+        </div>`).join('')}
+      </div>`}
+    </div>`).join('')}
+  `;
+}
+
 function logistiquePanel(){
   const resetAt = state.materialResetAt ? new Date(state.materialResetAt) : null;
 
@@ -1407,6 +1425,92 @@ function recoltePanel(){
         <span class="exp-meta">📦 ${esc(h.material)} • ${new Date(h.date).toLocaleString('fr-FR')}</span>
       </div>
     </div>`).join('') : '<p class="muted" style="font-size:14px;">Aucune récolte déclarée pour le moment.</p>'}
+  `;
+}
+
+function reglementPanel(){
+  const sections = [
+    {icon:'🤝', title:'Respect obligatoire', body:[
+      `Toute attitude irrespectueuse envers un collègue ou un membre du personnel est strictement interdite.`,
+      `Le respect est une valeur fondamentale de la Ferme Biogood.`
+    ]},
+    {icon:'💢', title:'Gestion des conflits', body:[
+      `En cas de conflit ou de désaccord interne, l'employé doit obligatoirement faire appel à un membre des Ressources Humaines afin de régler la situation de manière calme, professionnelle et encadrée.`
+    ]},
+    {icon:'🚫', title:'Objets et substances interdits', body:[
+      `Il est strictement interdit d'entreposer des objets ou des substances illicites dans :`,
+      `• les casiers ;<br>• les locaux de l'entreprise ;<br>• les véhicules de l'entreprise.`,
+      `➡️ Tout manquement entraînera un licenciement immédiat.`
+    ], danger:true},
+    {icon:'⚠️', title:'Avertissements', body:[
+      `Trois avertissements entraîneront un licenciement.`,
+      `La Ferme Biogood attend de chacun de ses employés un comportement exemplaire ainsi qu'un travail de qualité.`,
+      `L'employé ne doit en aucun cas divulguer son salaire.`,
+      `La fiche de paie doit être conservée dans le porte-documents fourni par l'entreprise.`,
+      `➡️ Fiche de paie perdue ou jetée = licenciement immédiat.`
+    ], danger:true},
+    {icon:'🛠', title:'Véhicules personnels ou de service', body:[
+      `Chaque employé est tenu de maintenir son véhicule en bon état de fonctionnement.`,
+      `➡️ Toute négligence = avertissement.`
+    ]},
+    {icon:'🍎', title:'Gestion des matières premières', body:[
+      `Les matières premières (fruits, légumes, etc.) ne doivent jamais être abandonnées (poubelle, sol, véhicule, domicile, etc.).`,
+      `➡️ Tout manquement = avertissement.`
+    ]},
+    {icon:'🚜', title:'Récolte et utilisation des véhicules', body:[
+      `Il est interdit de récolter en restant fusionné avec le véhicule de récolte.`,
+      `➡️ Tout manquement = avertissement.`
+    ]},
+    {icon:'🌻', title:'Stationnement en zone de récolte', body:[
+      `Il est interdit de récolter avec le véhicule stationné au milieu du champ.`,
+      `Le véhicule doit impérativement rester derrière la barrière en bois.`,
+      `➡️ Tout manquement = avertissement.`
+    ]},
+    {icon:'📅', title:'Absences', body:[
+      `Toute absence doit être signalée avant le mercredi à 23 h 59 avec un motif valable.`,
+      `Les absences non justifiées ou répétées ne seront pas tolérées.`
+    ]},
+    {icon:'🚚', title:'Stationnement du camion', body:[
+      `Le camion doit être stationné à une distance minimale de 2 mètres de la zone de transformation des cartons.`,
+      `➡️ Tout manquement = avertissement.`
+    ]},
+    {icon:'📦', title:'Utilisation obligatoire des caisses de récolte', body:[
+      `À compter de maintenant, l'utilisation des caisses est obligatoire pour toute récolte.`,
+      `Il est strictement interdit de poser les récoltes au sol ou en dehors des caisses prévues à cet effet.`,
+      `➡️ Tout manquement = avertissement.`,
+      `Toute caisse défectueuse (cassée, inutilisable, manquante, etc.) doit obligatoirement être signalée dans la liaison.`,
+      `➡️ Non-signalement = avertissement.`,
+      `Pour effectuer une run complète, le matériel requis est le suivant :`,
+      `• 21 caisses bleues ;<br>• 14 caisses jaunes.`,
+      `➡️ Le non-respect de ces consignes sera sanctionné conformément au présent règlement intérieur.`
+    ]},
+    {icon:'📦', title:'Coffre de stockage (container bleu)', body:[
+      `• 1 coffre par personne ;<br>• capacité maximale : une run complète.`
+    ]},
+    {icon:'🗂', title:'Coffre intérieur (bureau)', body:[
+      `Ce coffre doit contenir uniquement :`,
+      `• le menu ;<br>• un sac ;<br>• le porte-documents avec la fiche de paie.`,
+      `➡️ Tout autre objet sera confisqué.`
+    ]},
+    {icon:'✅', title:'Acceptation du règlement', body:[
+      `En intégrant la Ferme Biogood, chaque employé reconnaît avoir lu, compris et accepté le présent règlement intérieur.`
+    ]}
+  ];
+
+  return `
+  <h2 style="margin-bottom:4px;">📋 Règlement intérieur | Ferme Biogood 🍋</h2>
+  <p class="muted" style="margin-bottom:28px;">À lire attentivement — applicable à l'ensemble du personnel.</p>
+
+  ${sections.map(s=>`
+    <div class="card" style="margin-bottom:16px; align-items:stretch; ${s.danger?'border-color:rgba(224,108,83,0.35);':''}">
+      <h3 style="margin:0 0 8px; font-size:17px;">${s.icon} ${esc(s.title)}</h3>
+      ${s.body.map(p=>`<p style="margin:0 0 8px; font-size:14.5px; line-height:1.6; color:var(--ink-soft);">${p}</p>`).join('')}
+    </div>`).join('')}
+
+  <div style="margin-top:24px; padding:20px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,0.02); text-align:center;">
+    <p style="margin:0; font-size:14.5px; color:var(--ink-soft);">Cordialement,</p>
+    <p style="margin:4px 0 0; font-weight:700; color:var(--amber);">La Direction Biogood</p>
+  </div>
   `;
 }
 
@@ -1674,6 +1778,7 @@ function employeeHomeView(){
   const canInventaire = role==='commercial' || role==='rh';
   const canRecolte = role==='cultivateur';
   const canLogistique = role==='rh';
+  const canAnnuaire = role==='commercial' || role==='rh';
   const canCandidatures = role==='rh';
   const canCommandes = role==='commercial' || role==='rh';
   const canNoteFrais = role==='commercial' || role==='rh';
@@ -1682,6 +1787,8 @@ function employeeHomeView(){
     : `<div class="panel">${
         state.employeeTab==='recolte' && canRecolte ? recoltePanel()
         : state.employeeTab==='logistique' && canLogistique ? logistiquePanel()
+        : state.employeeTab==='annuaire' && canAnnuaire ? annuaireClientsPanel()
+        : state.employeeTab==='reglement' ? reglementPanel()
         : state.employeeTab==='historique' ? historiquePanel()
         : state.employeeTab==='classement' ? courseALaPrimePanel()
         : state.employeeTab==='candidatures' && canCandidatures ? candidaturesPanel()
@@ -1698,10 +1805,12 @@ function employeeHomeView(){
       ${canInventaire ? `<button data-etab="inventaire" class="${state.employeeTab==='inventaire'?'active':''}">🌱 Inventaire</button>` : ''}
       ${canRecolte ? `<button data-etab="recolte" class="${state.employeeTab==='recolte'?'active':''}">🌾 Récolte</button>` : ''}
       ${canLogistique ? `<button data-etab="logistique" class="${state.employeeTab==='logistique'?'active':''}">📦 Logistique</button>` : ''}
+      ${canAnnuaire ? `<button data-etab="annuaire" class="${state.employeeTab==='annuaire'?'active':''}">📇 Annuaire clients</button>` : ''}
       ${canCommandes ? `<button data-etab="commandes" class="${state.employeeTab==='commandes'?'active':''}">🧾 Commandes${orderTabBadge()}</button>` : ''}
       ${canCandidatures ? `<button data-etab="candidatures" class="${state.employeeTab==='candidatures'?'active':''}">📋 Candidatures</button>` : ''}
       ${canNoteFrais ? `<button data-etab="notefrais" class="${state.employeeTab==='notefrais'?'active':''}">📋 Note de Frais</button>` : ''}
       <button data-etab="partenariat" class="${state.employeeTab==='partenariat'?'active':''}">🤝 Partenariat</button>
+      <button data-etab="reglement" class="${state.employeeTab==='reglement'?'active':''}">📋 Règlement</button>
       <button data-etab="historique" class="${state.employeeTab==='historique'?'active':''}">🕘 Historique</button>
       <button data-etab="classement" class="${state.employeeTab==='classement'?'active':''}">🏆 Course à la prime</button>
       <button data-etab="dossier" class="${state.employeeTab==='dossier'?'active':''}">🪪 Mon Dossier</button>
@@ -2122,20 +2231,15 @@ function attachEvents(){
   document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>setState({activeCat:b.dataset.cat}));
 
   // Avertissement Verrouillage Majuscules sur les champs mot de passe
-  ['empPass','loginPass','accPass','pwCurrent','pwNew','pwConfirm'].forEach(attachCapsLockWatch);
+  ['empPass','loginPass','accPass'].forEach(attachCapsLockWatch);
   attachPasswordToggle('empPass','toggleEmpPass');
   attachPasswordToggle('loginPass','toggleLoginPass');
   attachPasswordToggle('accPass','toggleAccPass');
-  attachPasswordToggle('pwCurrent','togglePwCurrent');
-  attachPasswordToggle('pwNew','togglePwNew');
-  attachPasswordToggle('pwConfirm','togglePwConfirm');
 
-  // Mon espace : personnes de confiance & mot de passe
+  // Mon espace : personnes de confiance
   const addTrustedBtn = document.getElementById('addTrustedBtn');
   if(addTrustedBtn) addTrustedBtn.onclick = onAddTrustedPerson;
   document.querySelectorAll('[data-deltrusted]').forEach(b=>b.onclick=()=>onDeleteTrustedPerson(b.dataset.deltrusted));
-  const changePwBtn = document.getElementById('changePwBtn');
-  if(changePwBtn) changePwBtn.onclick = onChangeMyPassword;
 
   const manualRefreshBtn = document.getElementById('manualRefreshBtn');
   if(manualRefreshBtn) manualRefreshBtn.onclick = onManualRefresh;
@@ -2506,35 +2610,6 @@ function onDeleteTrustedPerson(id){
   saveTrustedPersons();
   toast('Personne de confiance supprimée');
   render();
-}
-
-function onChangeMyPassword(){
-  const err = document.getElementById('pwErr');
-  const current = document.getElementById('pwCurrent').value;
-  const next = document.getElementById('pwNew').value;
-  const confirmPw = document.getElementById('pwConfirm').value;
-  const acc = state.accounts.find(a=>a.username===state.auth.username);
-
-  if(!acc || acc.password !== current){
-    err.style.display='block'; err.textContent = 'Le mot de passe actuel est incorrect.';
-    return;
-  }
-  if(!next || next.length < 4){
-    err.style.display='block'; err.textContent = 'Le nouveau mot de passe doit contenir au moins 4 caractères.';
-    return;
-  }
-  if(next !== confirmPw){
-    err.style.display='block'; err.textContent = 'Les deux mots de passe ne correspondent pas.';
-    return;
-  }
-
-  acc.password = next;
-  saveAccounts();
-  err.style.display='none';
-  document.getElementById('pwCurrent').value = '';
-  document.getElementById('pwNew').value = '';
-  document.getElementById('pwConfirm').value = '';
-  toast('Mot de passe mis à jour avec succès');
 }
 
 function onSubmitOrder(){
