@@ -419,6 +419,21 @@
     .add-form{grid-template-columns:1fr 1fr;}
     .emp-grid{grid-template-columns: 1fr;}
   }
+
+  @media print{
+    body *{visibility:hidden;}
+    #pdfExportArea, #pdfExportArea *{visibility:visible;}
+    #pdfExportArea{position:absolute; top:0; left:0; width:100%; background:#fff; padding:10px;}
+    #pdfExportArea .print-only{display:block !important; color:#111 !important;}
+    #pdfExportArea table{min-width:0; width:100%; font-size:11px;}
+    #pdfExportArea th, #pdfExportArea td{border:1px solid #999 !important; color:#111 !important; padding:6px 8px;}
+    #pdfExportArea th{background:#eee !important;}
+    #pdfExportArea input, #pdfExportArea select{
+      border:none !important; background:none !important; box-shadow:none !important;
+      -webkit-appearance:none !important; appearance:none !important; color:#111 !important; padding:0 !important; width:auto !important;
+    }
+    .no-print{display:none !important;}
+  }
 </style>
 </head>
 <body>
@@ -567,6 +582,7 @@ let state = {
   cartonsResetMeta:{lastResetAt:null},
   primeResetAt:null,
   materialResetAt:null,
+  ficheResetAt:null,
   selectedHarvestProduct:null,
   partnerships:[],
   production:{},
@@ -576,6 +592,11 @@ let state = {
   orders:[],
   accounts:[],
   trustedPersons:[],
+  workSheet:[],
+  stockDeclarations:[],
+  absences:[],
+  events:[],
+  onDutyStaff:[],
   expenseReports:[],
   applications:[],
   customPricing:{},
@@ -644,6 +665,31 @@ async function loadAll(){
   }catch(e){ state.trustedPersons = []; }
 
   try{
+    const ws = await window.storage.get('workSheet', true);
+    state.workSheet = ws ? JSON.parse(ws.value) : [];
+  }catch(e){ state.workSheet = []; }
+
+  try{
+    const sd = await window.storage.get('stockDeclarations', true);
+    state.stockDeclarations = sd ? JSON.parse(sd.value) : [];
+  }catch(e){ state.stockDeclarations = []; }
+
+  try{
+    const ab = await window.storage.get('absences', true);
+    state.absences = ab ? JSON.parse(ab.value) : [];
+  }catch(e){ state.absences = []; }
+
+  try{
+    const ev = await window.storage.get('events', true);
+    state.events = ev ? JSON.parse(ev.value) : [];
+  }catch(e){ state.events = []; }
+
+  try{
+    const od = await window.storage.get('onDutyStaff', true);
+    state.onDutyStaff = od ? JSON.parse(od.value) : [];
+  }catch(e){ state.onDutyStaff = []; }
+
+  try{
     const er = await window.storage.get('expenseReports', true);
     state.expenseReports = er ? JSON.parse(er.value) : [];
   }catch(e){ state.expenseReports = []; }
@@ -694,6 +740,11 @@ async function loadAll(){
   }catch(e){ state.materialResetAt = null; }
 
   try{
+    const fr = await window.storage.get('ficheResetAt', true);
+    state.ficheResetAt = fr ? JSON.parse(fr.value) : null;
+  }catch(e){ state.ficheResetAt = null; }
+
+  try{
     const pt = await window.storage.get('partnerships', true);
     state.partnerships = pt ? JSON.parse(pt.value) : [];
   }catch(e){ state.partnerships = []; }
@@ -738,6 +789,11 @@ async function saveCatalog(){ try{ await window.storage.set('catalog', JSON.stri
 async function saveOrders(){ try{ await window.storage.set('orders', JSON.stringify(state.orders), true);}catch(e){ toast('Erreur'); } }
 async function saveAccounts(){ try{ await window.storage.set('accounts', JSON.stringify(state.accounts), true);}catch(e){ toast('Erreur'); } }
 async function saveTrustedPersons(){ try{ await window.storage.set('trustedPersons', JSON.stringify(state.trustedPersons), true);}catch(e){ toast('Erreur'); } }
+async function saveWorkSheet(){ try{ await window.storage.set('workSheet', JSON.stringify(state.workSheet), true);}catch(e){ toast('Erreur'); } }
+async function saveStockDeclarations(){ try{ await window.storage.set('stockDeclarations', JSON.stringify(state.stockDeclarations), true);}catch(e){ toast('Erreur'); } }
+async function saveAbsences(){ try{ await window.storage.set('absences', JSON.stringify(state.absences), true);}catch(e){ toast('Erreur'); } }
+async function saveEvents(){ try{ await window.storage.set('events', JSON.stringify(state.events), true);}catch(e){ toast('Erreur'); } }
+async function saveOnDutyStaff(){ try{ await window.storage.set('onDutyStaff', JSON.stringify(state.onDutyStaff), true);}catch(e){ toast('Erreur'); } }
 async function saveExpenseReports(){ try{ await window.storage.set('expenseReports', JSON.stringify(state.expenseReports), true);}catch(e){ toast('Erreur'); } }
 async function saveCustomPricing(){ try{ await window.storage.set('customPricing', JSON.stringify(state.customPricing), true);}catch(e){ toast('Erreur'); } }
 async function saveApplications(){ try{ await window.storage.set('applications', JSON.stringify(state.applications), true);}catch(e){ toast('Erreur'); } }
@@ -756,6 +812,7 @@ async function setAccountStock(username, maxCartons){
 async function saveCartonsResetMeta(){ try{ await window.storage.set('cartonsResetMeta', JSON.stringify(state.cartonsResetMeta), true);}catch(e){} }
 async function savePrimeResetAt(){ try{ await window.storage.set('primeResetAt', JSON.stringify(state.primeResetAt), true);}catch(e){ toast('Erreur'); } }
 async function saveMaterialResetAt(){ try{ await window.storage.set('materialResetAt', JSON.stringify(state.materialResetAt), true);}catch(e){ toast('Erreur'); } }
+async function saveFicheResetAt(){ try{ await window.storage.set('ficheResetAt', JSON.stringify(state.ficheResetAt), true);}catch(e){ toast('Erreur'); } }
 async function saveLastSeenOrders(){ try{ await window.storage.set('lastSeenOrders', JSON.stringify(state.lastSeenOrders), true);}catch(e){ /* silencieux */ } }
 
 /* Nombre de commandes pas encore consultées par l'utilisateur connecté (rh, commercial, patron) */
@@ -921,6 +978,8 @@ function header(){
   const isCustomerLike = role==='admin' || role==='vendeur' || role==='client';
   const isPatron = role==='patron';
   const isStaff = role==='cultivateur' || role==='commercial' || role==='rh';
+  const canService = role==='patron' || role==='commercial' || role==='rh';
+  const isOnDuty = state.auth ? state.onDutyStaff.some(o=>o.username===state.auth.username) : false;
   return `
   <div class="topbar">
     <div class="brand">
@@ -942,6 +1001,7 @@ function header(){
         ${isPatron ? `<button data-nav="patron" class="${state.view==='patron'?'active':''}">Espace patron</button>` : ''}
         ${isStaff ? `<button data-nav="employeeHome" class="${state.view==='employeeHome'?'active':''}">Mon espace</button>` : ''}
       </div>
+      ${canService ? `<button id="toggleServiceBtn" style="padding:10px 20px; border-radius:100px; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; border:1.5px solid ${isOnDuty?'var(--leaf-light)':'rgba(255,255,255,0.1)'}; background:${isOnDuty?'rgba(166,232,107,0.14)':'rgba(255,255,255,0.05)'}; color:${isOnDuty?'var(--leaf-light)':'var(--ink)'}; box-shadow:${isOnDuty?'0 0 14px rgba(166,232,107,0.4)':'none'}; white-space:nowrap;">${isOnDuty?'🟢 En service':'⚪ Se mettre en service'}</button>` : ''}
       <button id="headerLogout" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1); color:var(--ink); padding:10px 20px; border-radius:100px; font-size:14px; font-weight:600; transition:all 0.2s;">↩ ${esc(state.auth.username)}</button>
     </div>` : ''}
   </div>`;
@@ -1118,6 +1178,8 @@ function patronView(){
         state.patronTab==='commandes' ? commandesPanel()
         : state.patronTab==='logistique' ? logistiquePanel()
         : state.patronTab==='annuaire' ? annuaireClientsPanel()
+        : state.patronTab==='fiche' ? ficheTravailPanel()
+        : state.patronTab==='calendrier' ? calendrierPanel()
         : state.patronTab==='historique' ? historiquePanel()
         : state.patronTab==='partenariat' ? partnershipsPanel()
         : state.patronTab==='classement' ? courseALaPrimePanel()
@@ -1134,6 +1196,8 @@ function patronView(){
       <button data-ptab="inventaire" class="${state.patronTab==='inventaire'?'active':''}">🌱 Inventaire</button>
       <button data-ptab="logistique" class="${state.patronTab==='logistique'?'active':''}">📦 Logistique</button>
       <button data-ptab="annuaire" class="${state.patronTab==='annuaire'?'active':''}">📇 Annuaire clients</button>
+      <button data-ptab="fiche" class="${state.patronTab==='fiche'?'active':''}">🗂️ Fiche de travail</button>
+      <button data-ptab="calendrier" class="${state.patronTab==='calendrier'?'active':''}">📅 Calendrier</button>
       <button data-ptab="commandes" class="${state.patronTab==='commandes'?'active':''}">🧾 Commandes${orderTabBadge()}</button>
       <button data-ptab="partenariat" class="${state.patronTab==='partenariat'?'active':''}">🤝 Partenariat</button>
       <button data-ptab="notefrais" class="${state.patronTab==='notefrais'?'active':''}">📋 Note de Frais</button>
@@ -1428,6 +1492,167 @@ function recoltePanel(){
   `;
 }
 
+const POSTE_OPTIONS = [
+  {value:'Chief Executive Officer', color:'#E2B050', bg:'rgba(226,176,80,0.16)'},
+  {value:'Co-Chief Executive Officer', color:'#E2B050', bg:'rgba(226,176,80,0.12)'},
+  {value:'Responsable RH', color:'#6FA8DC', bg:'rgba(111,168,220,0.16)'},
+  {value:'RH', color:'#82A35E', bg:'rgba(130,163,94,0.16)'},
+  {value:'Commercial', color:'#E06C53', bg:'rgba(224,108,83,0.16)'},
+  {value:'Cultivateur', color:'#A6E86B', bg:'rgba(166,232,107,0.16)'},
+];
+
+// 200 cartons = 20 000$ de chiffre d'affaires, quelle que soit l'ancienneté
+const CA_PAR_CARTON = 100;
+
+function ancienneteJours(dateArrivee){
+  if(!dateArrivee) return 0;
+  const d = new Date(dateArrivee);
+  if(isNaN(d.getTime())) return 0;
+  return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+}
+
+// Taux de salaire par carton selon l'ancienneté :
+// >= 3 semaines : 200 cartons = 15 000$ (75$/carton)
+// 2 semaines    : 200 cartons = 13 000$ (65$/carton)
+// < 1 semaine   : 200 cartons = 11 000$ (55$/carton)
+// 1 semaine (palier non précisé) : valeur interpolée à 60$/carton
+function tauxSalaireParCarton(joursAnciennete){
+  const semaines = joursAnciennete / 7;
+  if(semaines >= 3) return 75;
+  if(semaines >= 2) return 65;
+  if(semaines >= 1) return 60;
+  return 55;
+}
+
+// Salaires fixes appliqués quand le quota de 200 cartons est atteint,
+// pour les postes de direction/RH. Les autres postes (Commercial, Cultivateur)
+// gardent le calcul au taux/carton selon l'ancienneté.
+const SALAIRE_FIXE_QUOTA_COMPLET = {
+  'Chief Executive Officer': 20000,
+  'Co-Chief Executive Officer': 20000,
+  'Responsable RH': 18000,
+  'RH': 17000,
+};
+
+function calculerSalaire(poste, cartons, joursAnciennete){
+  if(cartons >= 200 && SALAIRE_FIXE_QUOTA_COMPLET[poste] !== undefined){
+    return SALAIRE_FIXE_QUOTA_COMPLET[poste];
+  }
+  return cartons * tauxSalaireParCarton(joursAnciennete);
+}
+
+function cartonsExportesPar(username){
+  if(!username) return 0;
+  const resetAt = state.ficheResetAt ? new Date(state.ficheResetAt) : null;
+  return state.exportHistory
+    .filter(h=>h.username===username && (!resetAt || new Date(h.date) > resetAt))
+    .reduce((s,h)=>s+(h.amount||0),0);
+}
+
+function stocksDeclaresPar(username){
+  if(!username) return 0;
+  const resetAt = state.ficheResetAt ? new Date(state.ficheResetAt) : null;
+  return state.stockDeclarations
+    .filter(s=>s.username===username && (!resetAt || new Date(s.date) > resetAt))
+    .reduce((s,d)=>s+(d.qty||0),0);
+}
+
+function essencesApprouveesPar(username){
+  if(!username) return 0;
+  const resetAt = state.ficheResetAt ? new Date(state.ficheResetAt) : null;
+  return state.expenseReports
+    .filter(r=>r.username===username && r.status==='approuvee' && (!resetAt || new Date(r.date) > resetAt))
+    .reduce((s,r)=>s+(r.amount||0),0);
+}
+
+function formatMoney(n){
+  return Math.round(n||0).toLocaleString('fr-FR') + '$';
+}
+
+function absenceStatusLabel(s){
+  return s==='approuvee' ? 'Approuvée' : s==='refusee' ? 'Refusée' : 'En attente';
+}
+
+function calendrierPanel(){
+  const isPatron = state.auth.role === 'patron';
+  const myAbsences = state.absences.filter(a=>a.username===state.auth.username).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const allAbsences = state.absences.slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const pendingAbsences = allAbsences.filter(a=>a.status==='attente');
+  const events = state.events.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  const absenceRow = (a, withActions) => `
+    <div class="expense-card">
+      <div class="exp-info">
+        <span class="exp-veh">🌴 ${new Date(a.date).toLocaleDateString('fr-FR')}${a.dateFin && a.dateFin!==a.date ? ` → ${new Date(a.dateFin).toLocaleDateString('fr-FR')}` : ''}</span>
+        <span class="exp-meta">${withActions ? esc(a.username)+' • ' : ''}${esc(a.motif || 'Sans motif précisé')}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span class="expense-status ${a.status}">${absenceStatusLabel(a.status)}</span>
+        ${withActions && a.status==='attente' ? `
+          <button class="icon-btn" data-absapprove="${a.id}" style="background:rgba(130,163,94,0.12); border-color:rgba(130,163,94,0.3); color:var(--leaf);">✓ Valider</button>
+          <button class="icon-btn del" data-absrefuse="${a.id}">✕ Refuser</button>
+        ` : ''}
+      </div>
+    </div>`;
+
+  const eventCard = (e) => `
+    <div class="card" style="margin-bottom:12px; align-items:stretch;">
+      <div style="display:flex; justify-content:space-between; align-items:start; gap:12px;">
+        <div>
+          <div style="font-weight:800; font-size:16px; color:var(--amber);">📢 ${esc(e.title)}</div>
+          <div class="muted" style="font-size:13px; margin-top:2px;">${new Date(e.date).toLocaleDateString('fr-FR')}</div>
+        </div>
+        ${isPatron ? `<button class="icon-btn del" data-eventdel="${e.id}" style="padding:6px 10px; font-size:12px;">✕</button>` : ''}
+      </div>
+      ${e.description ? `<p style="margin:8px 0 0; font-size:14px; color:var(--ink-soft); line-height:1.5;">${esc(e.description)}</p>` : ''}
+    </div>`;
+
+  return `
+  <h2>📅 Calendrier</h2>
+  <p class="muted" style="margin-bottom:24px;">Déclarez vos absences et consultez les événements annoncés par la Direction.</p>
+
+  <div class="card" style="margin-bottom:24px; align-items:stretch;">
+    <h3 style="margin-bottom:4px;">🌴 Déclarer une absence</h3>
+    <p class="muted" style="margin-bottom:16px;">Votre demande sera soumise à validation par le Patron.</p>
+    <div class="add-form" style="grid-template-columns:1fr 1fr 2fr auto;">
+      <div class="field"><label>Date de début</label><input id="absDate" type="date" /></div>
+      <div class="field"><label>Date de fin</label><input id="absDateFin" type="date" /></div>
+      <div class="field"><label>Motif</label><input id="absMotif" placeholder="Ex : rendez-vous médical" /></div>
+      <button class="primary-btn" id="submitAbsenceBtn" style="width:auto; padding:14px 22px; white-space:nowrap;">Déclarer</button>
+    </div>
+    <div id="absErr" class="err" style="display:none;"></div>
+
+    <h4 style="margin:20px 0 10px; font-size:14px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:1px;">Mes absences</h4>
+    ${myAbsences.length===0 ? `<p class="muted" style="font-size:14px;">Aucune absence déclarée.</p>` : myAbsences.map(a=>absenceRow(a,false)).join('')}
+  </div>
+
+  ${isPatron ? `
+  <div class="card" style="margin-bottom:24px; align-items:stretch;">
+    <h3 style="margin-bottom:4px;">✅ Absences à valider</h3>
+    <p class="muted" style="margin-bottom:16px;">${pendingAbsences.length} demande${pendingAbsences.length>1?'s':''} en attente.</p>
+    ${pendingAbsences.length===0 ? `<p class="muted" style="font-size:14px;">Aucune demande en attente.</p>` : pendingAbsences.map(a=>absenceRow(a,true)).join('')}
+  </div>
+  ` : ''}
+
+  <div class="card" style="align-items:stretch;">
+    <h3 style="margin:0 0 4px;">📢 Événements</h3>
+    <p class="muted" style="margin-bottom:16px;">Informations et annonces de la Direction.</p>
+
+    ${isPatron ? `
+    <div class="add-form" style="grid-template-columns:1fr 1fr 2fr auto; margin-bottom:20px;">
+      <div class="field"><label>Titre</label><input id="eventTitle" placeholder="Ex : Réunion d'équipe" /></div>
+      <div class="field"><label>Date</label><input id="eventDate" type="date" /></div>
+      <div class="field"><label>Description</label><input id="eventDesc" placeholder="Détails (optionnel)" /></div>
+      <button class="primary-btn" id="submitEventBtn" style="width:auto; padding:14px 22px; white-space:nowrap;">Publier</button>
+    </div>
+    <div id="eventErr" class="err" style="display:none;"></div>
+    ` : ''}
+
+    ${events.length===0 ? `<p class="muted" style="font-size:14px;">Aucun événement annoncé.</p>` : events.map(eventCard).join('')}
+  </div>
+  `;
+}
+
 function reglementPanel(){
   const sections = [
     {icon:'🤝', title:'Respect obligatoire', body:[
@@ -1510,6 +1735,80 @@ function reglementPanel(){
   <div style="margin-top:24px; padding:20px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,0.02); text-align:center;">
     <p style="margin:0; font-size:14.5px; color:var(--ink-soft);">Cordialement,</p>
     <p style="margin:4px 0 0; font-weight:700; color:var(--amber);">La Direction Biogood</p>
+  </div>
+  `;
+}
+
+function ficheTravailPanel(){
+  const isPatron = state.auth.role === 'patron';
+  const linkableAccounts = state.accounts.filter(a=>['cultivateur','commercial','rh','patron'].includes(a.role));
+
+  // Ordre hiérarchique fixe : CEO > Co-CEO > Responsable RH > RH > Commercial > Cultivateur
+  const POSTE_ORDER = ['Chief Executive Officer', 'Co-Chief Executive Officer', 'Responsable RH', 'RH', 'Commercial', 'Cultivateur'];
+  const sortedWorkSheet = [...state.workSheet].sort((a,b)=>{
+    const ia = POSTE_ORDER.indexOf(a.poste); const ib = POSTE_ORDER.indexOf(b.poste);
+    return (ia===-1?999:ia) - (ib===-1?999:ib);
+  });
+
+  const rows = sortedWorkSheet.map(r=>{
+    const cartons = cartonsExportesPar(r.username);
+    const jours = ancienneteJours(r.dateArrivee);
+    const ca = cartons * CA_PAR_CARTON;
+    const salaire = calculerSalaire(r.poste, cartons, jours);
+    const posteStyle = POSTE_OPTIONS.find(p=>p.value===r.poste) || {color:'var(--ink-soft)', bg:'rgba(255,255,255,0.04)'};
+    return `
+    <tr>
+      <td>${isPatron ? `<input class="mini-input" style="width:120px;" type="date" value="${esc(r.dateArrivee||'')}" data-wsfield="${r.id}|dateArrivee" />` : (r.dateArrivee ? new Date(r.dateArrivee).toLocaleDateString('fr-FR') : '—')}</td>
+      <td>${isPatron ? `<input class="mini-input" style="width:80px;" type="text" value="${esc(r.idPerso||'')}" data-wsfield="${r.id}|idPerso" />` : esc(r.idPerso||'—')}</td>
+      <td>${isPatron ? `
+        <input class="mini-input" style="width:140px;" type="text" value="${esc(r.nomPrenom||'')}" data-wsfield="${r.id}|nomPrenom" placeholder="Nom Prénom" />
+        <select class="mini-input" style="width:140px; margin-top:6px; font-size:11px;" data-wsfield="${r.id}|username">
+          <option value="">— Compte lié —</option>
+          ${linkableAccounts.map(a=>`<option value="${esc(a.username)}" ${r.username===a.username?'selected':''}>${esc(a.username)} (${a.role})</option>`).join('')}
+        </select>
+      ` : `<span style="font-weight:600;">${esc(r.nomPrenom||'—')}</span>`}</td>
+      <td>${isPatron ? `
+        <select class="mini-input" style="width:150px; color:${posteStyle.color}; background:${posteStyle.bg}; border-color:${posteStyle.color}; font-weight:700;" data-wsfield="${r.id}|poste">
+          ${POSTE_OPTIONS.map(p=>`<option value="${esc(p.value)}" ${r.poste===p.value?'selected':''}>${esc(p.value)}</option>`).join('')}
+        </select>
+      ` : `<span style="padding:6px 12px; border-radius:100px; font-size:12px; font-weight:700; color:${posteStyle.color}; background:${posteStyle.bg};">${esc(r.poste||'—')}</span>`}</td>
+      <td>${isPatron ? `<input class="mini-input" style="width:120px;" type="text" value="${esc(r.telephone||'')}" data-wsfield="${r.id}|telephone" />` : esc(r.telephone||'—')}</td>
+      <td>${isPatron ? `<input class="mini-input" style="width:110px;" type="text" value="${esc(r.iban||'')}" data-wsfield="${r.id}|iban" />` : esc(r.iban||'—')}</td>
+      <td style="background:rgba(224,108,83,0.08); font-weight:800; text-align:center; color:var(--amber);">${cartons}</td>
+      <td style="background:rgba(130,163,94,0.1); font-weight:800; text-align:center; color:var(--leaf);">${stocksDeclaresPar(r.username)}</td>
+      <td style="text-align:center; font-family:'Outfit',sans-serif;">${jours}</td>
+      <td style="font-weight:700; color:var(--leaf);">${formatMoney(ca)}</td>
+      <td style="font-weight:700; color:var(--amber);">${formatMoney(salaire)}</td>
+      <td style="text-align:center;">
+        <button ${isPatron ? `data-wsabsent="${r.id}"` : 'disabled'} title="${r.absent?'Absent':'Présent'}" style="width:16px; height:16px; border-radius:50%; border:none; padding:0; cursor:${isPatron?'pointer':'default'}; background:${r.absent?'var(--danger)':'var(--leaf)'};"></button>
+      </td>
+      <td style="background:rgba(226,176,80,0.1); font-weight:800; text-align:center; color:var(--amber);">${formatMoney(essencesApprouveesPar(r.username))}</td>
+      ${isPatron ? `<td><button class="icon-btn del" data-wsdel="${r.id}">✕</button></td>` : ''}
+    </tr>`;
+  }).join('');
+
+  return `
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:20px;">
+    <h2 style="margin:0;">🗂️ Fiche de travail</h2>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;" class="no-print">
+      ${isPatron ? `<button class="primary-btn" id="addWorkSheetBtn" style="width:auto; padding:12px 22px;">+ Ajouter un employé</button>` : ''}
+      ${isPatron ? `<button class="icon-btn" id="exportPdfBtn" style="padding:12px 22px;">🖨️ Exporter en PDF</button>` : ''}
+      ${isPatron ? `<button class="icon-btn del" id="finComptaBtn" style="padding:12px 22px;">🔄 Fin de compta</button>` : ''}
+    </div>
+  </div>
+  <div id="pdfExportArea">
+  <h3 class="print-only" style="display:none; margin-bottom:16px;">🗂️ Fiche de travail — Ferme BioGood</h3>
+  <div class="table-scroll">
+  <table>
+    <thead><tr>
+      <th>Date d'arrivée</th><th>ID Perso</th><th>Nom Prénom</th><th>Poste</th><th>Téléphone</th><th>IBAN</th>
+      <th>Cartons</th><th>Stocks</th><th>Ancienneté</th><th>C.A</th><th>Salaire</th><th>Absent</th><th>Essences</th>${isPatron ? '<th></th>' : ''}
+    </tr></thead>
+    <tbody>
+      ${rows || `<tr><td colspan="${isPatron?14:13}" class="muted">Aucune fiche employé pour le moment.</td></tr>`}
+    </tbody>
+  </table>
+  </div>
   </div>
   `;
 }
@@ -1788,6 +2087,8 @@ function employeeHomeView(){
         state.employeeTab==='recolte' && canRecolte ? recoltePanel()
         : state.employeeTab==='logistique' && canLogistique ? logistiquePanel()
         : state.employeeTab==='annuaire' && canAnnuaire ? annuaireClientsPanel()
+        : state.employeeTab==='fiche' ? ficheTravailPanel()
+        : state.employeeTab==='calendrier' ? calendrierPanel()
         : state.employeeTab==='reglement' ? reglementPanel()
         : state.employeeTab==='historique' ? historiquePanel()
         : state.employeeTab==='classement' ? courseALaPrimePanel()
@@ -1810,6 +2111,8 @@ function employeeHomeView(){
       ${canCandidatures ? `<button data-etab="candidatures" class="${state.employeeTab==='candidatures'?'active':''}">📋 Candidatures</button>` : ''}
       ${canNoteFrais ? `<button data-etab="notefrais" class="${state.employeeTab==='notefrais'?'active':''}">📋 Note de Frais</button>` : ''}
       <button data-etab="partenariat" class="${state.employeeTab==='partenariat'?'active':''}">🤝 Partenariat</button>
+      <button data-etab="fiche" class="${state.employeeTab==='fiche'?'active':''}">🗂️ Fiche de travail</button>
+      <button data-etab="calendrier" class="${state.employeeTab==='calendrier'?'active':''}">📅 Calendrier</button>
       <button data-etab="reglement" class="${state.employeeTab==='reglement'?'active':''}">📋 Règlement</button>
       <button data-etab="historique" class="${state.employeeTab==='historique'?'active':''}">🕘 Historique</button>
       <button data-etab="classement" class="${state.employeeTab==='classement'?'active':''}">🏆 Course à la prime</button>
@@ -1878,6 +2181,14 @@ function accueilView(){
   <div style="text-align:center; margin:40px 0 20px;">
     <button id="goLogin2" class="primary-btn" style="width:auto; padding:18px 40px; font-size:16px;">Se connecter pour commander</button>
   </div>
+  ${state.onDutyStaff.length>0 ? `
+  <div style="text-align:center; margin:0 0 40px;">
+    <div style="display:inline-flex; align-items:center; gap:10px; padding:12px 24px; border-radius:100px; background:rgba(166,232,107,0.1); border:1.5px solid var(--leaf-light); box-shadow:0 0 16px rgba(166,232,107,0.35);">
+      <span style="width:10px; height:10px; border-radius:50%; background:var(--leaf-light); box-shadow:0 0 8px var(--leaf-light);"></span>
+      <span style="color:var(--leaf-light); font-weight:700; font-size:14px;">Employé${state.onDutyStaff.length>1?'s':''} en service : ${state.onDutyStaff.map(o=>esc(o.username)).join(', ')}</span>
+    </div>
+  </div>
+  ` : ''}
   `;
 }
 
@@ -2017,7 +2328,7 @@ function produitsPanel(){
 }
 
 function tarifsPanel(){
-  const clientAccounts = state.accounts.filter(a=>a.role!=='admin');
+  const clientAccounts = state.accounts.filter(a=>a.role==='client');
   const selected = state.selectedPricingClient;
   return `
   <h2>Tarifs Préférentiels</h2>
@@ -2026,10 +2337,10 @@ function tarifsPanel(){
     <label>Sélectionnez un compte client</label>
     <select id="pricingClientSelect">
       <option value="">— Aucun compte sélectionné —</option>
-      ${clientAccounts.map(a=>`<option value="${esc(a.username)}" ${selected===a.username?'selected':''}>${esc(a.username)} (${a.role})</option>`).join('')}
+      ${clientAccounts.map(a=>`<option value="${esc(a.username)}" ${selected===a.username?'selected':''}>${esc(a.username)}</option>`).join('')}
     </select>
   </div>
-  ${clientAccounts.length===0 ? '<p class="muted">Aucun compte client/vendeur disponible. Vous pouvez en créer dans l\'onglet Comptes.</p>' : ''}
+  ${clientAccounts.length===0 ? '<p class="muted">Aucun compte client disponible. Vous pouvez en créer dans l\'onglet Comptes.</p>' : ''}
   ${selected ? renderPricingTable(selected) : ''}
   `;
 }
@@ -2241,8 +2552,35 @@ function attachEvents(){
   if(addTrustedBtn) addTrustedBtn.onclick = onAddTrustedPerson;
   document.querySelectorAll('[data-deltrusted]').forEach(b=>b.onclick=()=>onDeleteTrustedPerson(b.dataset.deltrusted));
 
+  // Fiche de travail
+  const addWorkSheetBtn = document.getElementById('addWorkSheetBtn');
+  if(addWorkSheetBtn) addWorkSheetBtn.onclick = onAddWorkSheetRow;
+  const exportPdfBtn = document.getElementById('exportPdfBtn');
+  if(exportPdfBtn) exportPdfBtn.onclick = onExportFichePdf;
+  const finComptaBtn = document.getElementById('finComptaBtn');
+  if(finComptaBtn) finComptaBtn.onclick = onResetFicheCompta;
+
+  // Calendrier : absences & événements
+  const submitAbsenceBtn = document.getElementById('submitAbsenceBtn');
+  if(submitAbsenceBtn) submitAbsenceBtn.onclick = onSubmitAbsence;
+  document.querySelectorAll('[data-absapprove]').forEach(b=>b.onclick=()=>onAbsenceDecision(b.dataset.absapprove,'approuvee'));
+  document.querySelectorAll('[data-absrefuse]').forEach(b=>b.onclick=()=>onAbsenceDecision(b.dataset.absrefuse,'refusee'));
+  const submitEventBtn = document.getElementById('submitEventBtn');
+  if(submitEventBtn) submitEventBtn.onclick = onSubmitEvent;
+  document.querySelectorAll('[data-eventdel]').forEach(b=>b.onclick=()=>onDeleteEvent(b.dataset.eventdel));
+  document.querySelectorAll('[data-wsdel]').forEach(b=>b.onclick=()=>onDeleteWorkSheetRow(b.dataset.wsdel));
+  document.querySelectorAll('[data-wsabsent]').forEach(b=>b.onclick=()=>onToggleAbsent(b.dataset.wsabsent));
+  document.querySelectorAll('[data-wsfield]').forEach(inpt=>{
+    inpt.onchange = (e)=>{
+      const [id, field] = e.target.dataset.wsfield.split('|');
+      onWorkSheetFieldChange(id, field, e.target.value);
+    };
+  });
+
   const manualRefreshBtn = document.getElementById('manualRefreshBtn');
   if(manualRefreshBtn) manualRefreshBtn.onclick = onManualRefresh;
+  const toggleServiceBtn = document.getElementById('toggleServiceBtn');
+  if(toggleServiceBtn) toggleServiceBtn.onclick = onToggleService;
 
   // note de frais
   const submitExpenseBtn = document.getElementById('submitExpenseBtn');
@@ -2589,6 +2927,151 @@ function onClearExpenses(){
   }
 }
 
+function onToggleService(){
+  const username = state.auth.username;
+  const already = state.onDutyStaff.find(o=>o.username===username);
+  if(already){
+    state.onDutyStaff = state.onDutyStaff.filter(o=>o.username!==username);
+    toast('Vous avez arrêté le service');
+  }else{
+    state.onDutyStaff.push({username, role: state.auth.role, since: new Date().toISOString()});
+    toast('Vous êtes maintenant en service');
+  }
+  saveOnDutyStaff();
+  render();
+}
+
+function onSubmitAbsence(){
+  const err = document.getElementById('absErr');
+  const date = document.getElementById('absDate').value;
+  let dateFin = document.getElementById('absDateFin').value;
+  const motif = document.getElementById('absMotif').value.trim();
+  if(!date){
+    err.style.display='block'; err.textContent = 'Veuillez indiquer une date de début.';
+    return;
+  }
+  if(dateFin && dateFin < date){
+    err.style.display='block'; err.textContent = 'La date de fin doit être postérieure ou égale à la date de début.';
+    return;
+  }
+  if(!dateFin) dateFin = date;
+  state.absences.push({
+    id: 'ab_'+Date.now(),
+    username: state.auth.username,
+    role: state.auth.role,
+    date, dateFin, motif,
+    status: 'attente',
+    createdAt: new Date().toISOString()
+  });
+  saveAbsences();
+  err.style.display='none';
+  toast('Absence déclarée, en attente de validation');
+  render();
+}
+
+function onAbsenceDecision(id, status){
+  const a = state.absences.find(x=>x.id===id);
+  if(a){
+    a.status = status;
+    saveAbsences();
+
+    // Marque l'employé "Absent" sur sa fiche de travail liée
+    if(status==='approuvee'){
+      const wsRow = state.workSheet.find(r=>r.username===a.username);
+      if(wsRow && !wsRow.absent){
+        wsRow.absent = true;
+        saveWorkSheet();
+      }
+    }
+
+    toast(status==='approuvee' ? 'Absence validée' : 'Absence refusée');
+    render();
+  }
+}
+
+function onSubmitEvent(){
+  const err = document.getElementById('eventErr');
+  const title = document.getElementById('eventTitle').value.trim();
+  const date = document.getElementById('eventDate').value;
+  const description = document.getElementById('eventDesc').value.trim();
+  if(!title || !date){
+    err.style.display='block'; err.textContent = 'Veuillez indiquer un titre et une date.';
+    return;
+  }
+  state.events.push({
+    id: 'ev_'+Date.now(),
+    title, date, description,
+    createdBy: state.auth.username,
+    createdAt: new Date().toISOString()
+  });
+  saveEvents();
+  err.style.display='none';
+  toast('Événement publié');
+  render();
+}
+
+function onDeleteEvent(id){
+  if(!confirm('Supprimer cet événement ?')) return;
+  state.events = state.events.filter(e=>e.id!==id);
+  saveEvents();
+  toast('Événement supprimé');
+  render();
+}
+
+function onExportFichePdf(){
+  window.print();
+}
+
+function onAddWorkSheetRow(){
+  state.workSheet.push({
+    id: 'ws_'+Date.now(),
+    username: '',
+    dateArrivee: new Date().toISOString().slice(0,10),
+    idPerso: '',
+    nomPrenom: '',
+    poste: 'Cultivateur',
+    telephone: '',
+    iban: '',
+    absent: false,
+    essences: 0
+  });
+  saveWorkSheet();
+  toast('Fiche employé ajoutée');
+  render();
+}
+
+function onDeleteWorkSheetRow(id){
+  if(!confirm('Supprimer cette fiche employé ?')) return;
+  state.workSheet = state.workSheet.filter(r=>r.id!==id);
+  saveWorkSheet();
+  toast('Fiche supprimée');
+  render();
+}
+
+function onWorkSheetFieldChange(id, field, value){
+  const row = state.workSheet.find(r=>r.id===id);
+  if(!row) return;
+  row[field] = value;
+  saveWorkSheet();
+  if(field==='poste' || field==='username') render();
+}
+
+function onToggleAbsent(id){
+  const row = state.workSheet.find(r=>r.id===id);
+  if(!row) return;
+  row.absent = !row.absent;
+  saveWorkSheet();
+  render();
+}
+
+async function onResetFicheCompta(){
+  if(!confirm("Fin de compta : les compteurs Cartons, Stocks et Essences de la fiche de travail vont être remis à zéro pour tout le monde. L'historique réel (exportations, récoltes, notes de frais) reste conservé. Continuer ?")) return;
+  state.ficheResetAt = new Date().toISOString();
+  await saveFicheResetAt();
+  toast('Fin de compta effectuée : compteurs remis à zéro');
+  render();
+}
+
 function onAddTrustedPerson(){
   const nom = document.getElementById('tpNom').value.trim();
   const prenom = document.getElementById('tpPrenom').value.trim();
@@ -2850,6 +3333,15 @@ function onSubmitHarvest(){
   });
   saveHarvests();
 
+  // Alimente la colonne "Stocks" de la fiche de travail de l'employé
+  state.stockDeclarations.push({
+    id: 'sd_'+Date.now(),
+    username: state.auth.username,
+    qty,
+    date: new Date().toISOString()
+  });
+  saveStockDeclarations();
+
   err.style.display='none';
   toast('Récolte déclarée : +'+qty+' '+p.name);
   render();
@@ -2876,6 +3368,16 @@ function onConfirmAddStock(){
     }
 
     saveCatalog();
+
+    // Alimente la colonne "Stocks" de la fiche de travail de l'employé
+    state.stockDeclarations.push({
+      id: 'sd_'+Date.now(),
+      username: state.auth.username,
+      qty,
+      date: new Date().toISOString()
+    });
+    saveStockDeclarations();
+
     setState({stockModalOpen:false});
     toast(msg);
   }
