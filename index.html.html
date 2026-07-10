@@ -607,6 +607,7 @@ let state = {
   events:[],
   onDutyStaff:[],
   comptabilite:{},
+  comptaResetAt:null,
   expenseReports:[],
   applications:[],
   customPricing:{},
@@ -703,6 +704,11 @@ async function loadAll(){
     const ct = await window.storage.get('comptabilite', true);
     state.comptabilite = ct ? JSON.parse(ct.value) : {};
   }catch(e){ state.comptabilite = {}; }
+
+  try{
+    const cr = await window.storage.get('comptaResetAt', true);
+    state.comptaResetAt = cr ? JSON.parse(cr.value) : null;
+  }catch(e){ state.comptaResetAt = null; }
 
   try{
     const er = await window.storage.get('expenseReports', true);
@@ -810,6 +816,7 @@ async function saveAbsences(){ try{ await window.storage.set('absences', JSON.st
 async function saveEvents(){ try{ await window.storage.set('events', JSON.stringify(state.events), true);}catch(e){ toast('Erreur'); } }
 async function saveOnDutyStaff(){ try{ await window.storage.set('onDutyStaff', JSON.stringify(state.onDutyStaff), true);}catch(e){ toast('Erreur'); } }
 async function saveComptabilite(){ try{ await window.storage.set('comptabilite', JSON.stringify(state.comptabilite), true);}catch(e){ toast('Erreur'); } }
+async function saveComptaResetAt(){ try{ await window.storage.set('comptaResetAt', JSON.stringify(state.comptaResetAt), true);}catch(e){ toast('Erreur'); } }
 async function saveExpenseReports(){ try{ await window.storage.set('expenseReports', JSON.stringify(state.expenseReports), true);}catch(e){ toast('Erreur'); } }
 async function saveCustomPricing(){ try{ await window.storage.set('customPricing', JSON.stringify(state.customPricing), true);}catch(e){ toast('Erreur'); } }
 async function saveApplications(){ try{ await window.storage.set('applications', JSON.stringify(state.applications), true);}catch(e){ toast('Erreur'); } }
@@ -1589,22 +1596,26 @@ function formatMoney(n){
 
 function comptaPanel(){
   const c = state.comptabilite;
+  const resetAt = state.comptaResetAt ? new Date(state.comptaResetAt) : null;
 
-  // Chiffre d'affaires "Exports" = cartons déclarés depuis le dernier "Fin de compta" x tarif/carton
-  const resetAt = state.ficheResetAt ? new Date(state.ficheResetAt) : null;
+  // Chiffre d'affaires "Exports" = cartons déclarés depuis le dernier "Réinitialiser compta" x tarif/carton
   const totalCartons = state.exportHistory
     .filter(h => !resetAt || new Date(h.date) > resetAt)
     .reduce((s,h)=>s+(h.amount||0),0);
   const exportsCA = totalCartons * CA_PAR_CARTON;
 
-  const commandes = c.commandes || 0;
+  // "Commandes" = montant total des commandes passées en statut Livrée depuis le dernier "Réinitialiser compta"
+  const commandesCA = state.orders
+    .filter(o => o.status==='livree' && (!resetAt || new Date(o.date) > resetAt))
+    .reduce((s,o)=>s+(o.total||0),0);
+
   const autresEntrees = c.autresEntrees || 0;
-  const chiffreAffaire = exportsCA + commandes + autresEntrees;
+  const chiffreAffaire = exportsCA + commandesCA + autresEntrees;
 
   const depensesDeductible = (c.matierePremiere||0) + (c.nourriture||0) + (c.fraisAvocat||0) + (c.locations||0) + (c.achatVehicule||0) + (c.dons||0);
   const depensesNonDeductible = (c.locationsNonDeductibles||0) + (c.achatsVehiculesNonDeductibles||0) + (c.autresDepensesNonDeductibles||0);
 
-  // Salaire à verser = somme des salaires calculés sur la Fiche de travail
+  // Salaire à verser = somme de TOUS les salaires inscrits sur la Fiche de travail
   const salaireAVerser = state.workSheet.reduce((sum,r)=>{
     const cartons = cartonsExportesPar(r.username);
     const jours = ancienneteJours(r.dateArrivee);
@@ -1614,70 +1625,69 @@ function comptaPanel(){
   const prime = c.prime || 0;
   const resultatImposable = chiffreAffaire - depensesDeductible - salaireAVerser - prime;
 
-  const field = (key, label) => `
-    <tr><td>${esc(label)}</td><td style="text-align:right;"><input class="mini-input" style="width:110px; text-align:right;" type="number" min="0" value="${c[key]||0}" data-comptafield="${key}" /></td></tr>`;
+  const cellBorder = '1px solid rgba(255,255,255,0.15)';
+  const sectionHeader = (title) => `<tr><th colspan="2" style="background:var(--leaf-dark); color:#fff; text-align:center; padding:10px; font-size:14px; letter-spacing:0.5px; border:${cellBorder}; text-transform:uppercase;">${esc(title)}</th></tr>`;
+  const readRow = (label, value, color, bold) => `
+    <tr><td style="border:${cellBorder}; color:${color||'var(--ink)'}; ${bold?'font-weight:800;':''}">${esc(label)}</td><td style="border:${cellBorder}; text-align:right; ${bold?'font-weight:800;':''} color:${bold?(color||'var(--ink)'):'var(--ink)'};">${formatMoney(value)}</td></tr>`;
+  const editRow = (key, label, color) => `
+    <tr><td style="border:${cellBorder}; color:${color||'var(--ink)'};">${esc(label)}</td><td style="border:${cellBorder}; text-align:right; padding:4px 8px;"><input class="mini-input" style="width:100%; text-align:right; background:transparent; border:none;" type="number" min="0" value="${c[key]||0}" data-comptafield="${key}" /></td></tr>`;
 
   return `
-  <h2>📊 Comptabilité</h2>
-  <p class="muted" style="margin-bottom:24px;">Visible et modifiable uniquement par le Patron. Le chiffre d'affaires "Exports" et le salaire à verser sont calculés automatiquement (cartons exportés et Fiche de travail).</p>
-
-  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; margin-bottom:20px;">
-    <div class="card" style="align-items:stretch;">
-      <h3 style="margin:0 0 4px; color:var(--leaf);">💰 Entrée d'argent</h3>
-      <table>
-        <tbody>
-          <tr><td>Exports (cartons)</td><td style="text-align:right; font-weight:700; color:var(--leaf);">${formatMoney(exportsCA)}</td></tr>
-          ${field('commandes','Commandes')}
-          ${field('autresEntrees','Autres entrées')}
-        </tbody>
-      </table>
-      <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:12px; border-top:1px solid var(--line); font-weight:800;">
-        <span>Chiffre d'Affaire</span><span style="color:var(--leaf);">${formatMoney(chiffreAffaire)}</span>
-      </div>
-    </div>
-
-    <div class="card" style="align-items:stretch;">
-      <h3 style="margin:0 0 4px; color:var(--amber);">📉 Dépenses déductibles</h3>
-      <table>
-        <tbody>
-          ${field('matierePremiere','Matière Première')}
-          ${field('nourriture','Nourriture')}
-          ${field('fraisAvocat',"Frais d'avocat")}
-          ${field('locations','Locations')}
-          ${field('achatVehicule','Achat/Frais Véhicule')}
-          ${field('dons','Dons')}
-        </tbody>
-      </table>
-      <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:12px; border-top:1px solid var(--line); font-weight:800;">
-        <span>Montant Dépenses Déductible</span><span style="color:var(--amber);">${formatMoney(depensesDeductible)}</span>
-      </div>
-    </div>
-
-    <div class="card" style="align-items:stretch;">
-      <h3 style="margin:0 0 4px; color:var(--danger);">📉 Dépenses non déductibles</h3>
-      <table>
-        <tbody>
-          ${field('locationsNonDeductibles','Locations non déductibles')}
-          ${field('achatsVehiculesNonDeductibles','Achats véhicules non déductibles')}
-          ${field('autresDepensesNonDeductibles','Autres dépenses non déductibles')}
-        </tbody>
-      </table>
-      <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:12px; border-top:1px solid var(--line); font-weight:800;">
-        <span>Montant Dépenses Non Déductible</span><span style="color:var(--danger);">${formatMoney(depensesNonDeductible)}</span>
-      </div>
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:8px;">
+    <h2 style="margin:0;">📊 Comptabilité</h2>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;" class="no-print">
+      <button class="icon-btn" id="exportComptaPdfBtn" style="padding:12px 22px;">🖨️ Exporter en PDF</button>
+      <button class="icon-btn del" id="resetComptaBtn" style="padding:12px 22px;">🔄 Réinitialiser compta</button>
     </div>
   </div>
+  <p class="muted" style="margin-bottom:24px;">Visible et modifiable uniquement par le Patron. "Exports" (cartons), "Commandes" (livrées) et "Salaire à verser" (Fiche de travail) sont calculés automatiquement.${resetAt ? `<br>Compta réinitialisée le ${resetAt.toLocaleString('fr-FR')}.` : ''}</p>
 
-  <div class="card" style="max-width:420px; align-items:stretch;">
-    <h3 style="margin:0 0 4px;">📈 Statistique semaine</h3>
-    <table>
+  <div id="pdfExportArea">
+  <h3 class="print-only" style="display:none; margin-bottom:16px;">📊 Comptabilité — Ferme BioGood</h3>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; margin-bottom:20px; align-items:start;">
+    <table style="border-collapse:collapse; border:${cellBorder};">
+      ${sectionHeader("Entrée d'argent")}
       <tbody>
-        <tr><td>Chiffre d'affaire</td><td style="text-align:right; font-weight:700; color:var(--leaf);">${formatMoney(chiffreAffaire)}</td></tr>
-        <tr><td>Salaire à verser</td><td style="text-align:right; font-weight:700; color:var(--amber);">${formatMoney(salaireAVerser)}</td></tr>
-        ${field('prime','Prime')}
-        <tr><td style="font-weight:800;">Résultat Imposable</td><td style="text-align:right; font-weight:800; color:${resultatImposable>=0?'var(--leaf)':'var(--danger)'};">${formatMoney(resultatImposable)}</td></tr>
+        ${readRow('Exports', exportsCA, 'var(--amber)')}
+        ${readRow('Commandes', commandesCA, 'var(--amber)')}
+        ${editRow('autresEntrees','Autres entrées','var(--amber)')}
+        ${readRow("Chiffre d'Affaire", chiffreAffaire, 'var(--amber)', true)}
       </tbody>
     </table>
+
+    <table style="border-collapse:collapse; border:${cellBorder};">
+      ${sectionHeader('Dépenses déductible')}
+      <tbody>
+        ${editRow('matierePremiere','Matière Première','#6FA8DC')}
+        ${editRow('nourriture','Nourriture','#6FA8DC')}
+        ${editRow('fraisAvocat',"Frais d'avocat",'#6FA8DC')}
+        ${editRow('locations','Locations','#6FA8DC')}
+        ${editRow('achatVehicule','Achat/Frais Véhicule','#6FA8DC')}
+        ${editRow('dons','Dons','#6FA8DC')}
+        ${readRow('Montant Dépenses Déductible', depensesDeductible, '#6FA8DC', true)}
+      </tbody>
+    </table>
+
+    <table style="border-collapse:collapse; border:${cellBorder};">
+      ${sectionHeader('Dépenses non déductible')}
+      <tbody>
+        ${editRow('locationsNonDeductibles','Locations non déductibles :','#6FA8DC')}
+        ${editRow('achatsVehiculesNonDeductibles','Achats véhicules non déductibles :','#6FA8DC')}
+        ${editRow('autresDepensesNonDeductibles','Autres dépenses non déductibles :','#6FA8DC')}
+        ${readRow('Montant Dépenses Non Déductible', depensesNonDeductible, '#6FA8DC', true)}
+      </tbody>
+    </table>
+  </div>
+
+  <table style="border-collapse:collapse; border:${cellBorder}; max-width:420px;">
+    ${sectionHeader('Statistique semaine')}
+    <tbody>
+      ${readRow("Chiffre d'affaire", chiffreAffaire, '#6FA8DC')}
+      ${readRow('Salaire à verser', salaireAVerser, 'var(--amber)')}
+      ${editRow('prime','Prime','var(--amber)')}
+      ${readRow('Résultat Imposable', resultatImposable, resultatImposable>=0?'#6FA8DC':'var(--danger)', true)}
+    </tbody>
+  </table>
   </div>
   `;
 }
@@ -2670,6 +2680,10 @@ function attachEvents(){
   if(addWorkSheetBtn) addWorkSheetBtn.onclick = onAddWorkSheetRow;
   const exportPdfBtn = document.getElementById('exportPdfBtn');
   if(exportPdfBtn) exportPdfBtn.onclick = onExportFichePdf;
+  const exportComptaPdfBtn = document.getElementById('exportComptaPdfBtn');
+  if(exportComptaPdfBtn) exportComptaPdfBtn.onclick = onExportFichePdf;
+  const resetComptaBtn = document.getElementById('resetComptaBtn');
+  if(resetComptaBtn) resetComptaBtn.onclick = onResetCompta;
   document.querySelectorAll('[data-comptafield]').forEach(inpt=>{
     inpt.onchange = (e)=> onComptaFieldChange(e.target.dataset.comptafield, e.target.value);
   });
@@ -3142,6 +3156,16 @@ function onComptaFieldChange(key, value){
 
 function onExportFichePdf(){
   window.print();
+}
+
+async function onResetCompta(){
+  if(!confirm("Réinitialiser la comptabilité ? Les montants 'Exports' et 'Commandes' repartiront de zéro et tous les champs saisis manuellement (Autres entrées, Dépenses, Prime...) seront remis à 0. L'historique réel (exportations, commandes, notes de frais) reste conservé. Continuer ?")) return;
+  state.comptaResetAt = new Date().toISOString();
+  state.comptabilite = {};
+  await saveComptaResetAt();
+  await saveComptabilite();
+  toast('Comptabilité réinitialisée');
+  render();
 }
 
 function onAddWorkSheetRow(){
