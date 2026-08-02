@@ -3279,19 +3279,30 @@ function onDeleteTrustedPerson(id){
   render();
 }
 
-async function sendDiscordOrderNotification(order){
-  const url = state.discordWebhookUrl;
-  if(!url) return;
+function buildDiscordOrderEmbed(order){
   const itemsText = (order.items||[]).map(i=>`• ${i.qty}× ${i.name} — ${(i.price*i.qty).toFixed(2)}$`).join('\n') || 'Aucun article';
 
   const deliveryText = order.asap
     ? 'Dès que possible'
     : (order.desiredDate ? new Date(order.desiredDate).toLocaleDateString('fr-FR') : 'Non précisé');
 
+  const statusColors = {
+    attente: 0xE2B050,
+    preparation: 0x9CC4C4,
+    prete: 0x82A35E,
+    livree: 0x6FA8DC,
+    annulee: 0xE06C53
+  };
+  const statusEmojis = {
+    attente: '⏳', preparation: '🛠️', prete: '✅', livree: '📦', annulee: '❌'
+  };
+  const status = order.status || 'attente';
+
   const fields = [
     { name: '🆔 Commande', value: order.id || '—', inline: true },
     { name: '👤 Client', value: order.client || '—', inline: true },
     { name: '💰 Montant total', value: formatMoney(order.total), inline: true },
+    { name: (statusEmojis[status]||'📌') + ' Statut', value: orderStatusLabel(status), inline: true },
     { name: '📇 Personne à contacter', value: order.contactPerson ? order.contactPerson : 'Non renseigné', inline: true },
     { name: '📞 Téléphone', value: order.phone ? order.phone : 'Non renseigné', inline: true },
     { name: '🧑‍💻 Passée par', value: order.username ? order.username : 'Non renseigné', inline: true },
@@ -3301,23 +3312,55 @@ async function sendDiscordOrderNotification(order){
     { name: '📝 Note', value: order.note ? order.note : 'Aucune' }
   ];
 
-  const embed = {
-    title: '🧾 Nouvelle commande reçue',
-    color: 0xE2B050,
+  return {
+    title: '🧾 Commande ' + (order.client || ''),
+    color: statusColors[status] || 0xE2B050,
     fields,
     footer: { text: 'Ferme BioGood — Boutique' },
     timestamp: order.date ? new Date(order.date).toISOString() : new Date().toISOString()
   };
+}
+
+async function sendDiscordOrderNotification(order){
+  const url = state.discordWebhookUrl;
+  if(!url) return;
+  const embed = buildDiscordOrderEmbed(order);
   try{
-    await fetch(url, {
+    const sep = url.includes('?') ? '&' : '?';
+    const res = await fetch(url + sep + 'wait=true', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ embeds:[embed] })
+      body: JSON.stringify({
+        content: '<@&1174743418329628814>',
+        allowed_mentions: { roles: ['1174743418329628814'] },
+        embeds:[embed]
+      })
     });
+    const data = await res.json().catch(()=>null);
+    if(data && data.id){ order.discordMessageId = data.id; }
   }catch(e){
     console.error('Erreur webhook Discord', e);
   }
 }
+
+// Met à jour le message Discord existant d'une commande (ex: changement de statut)
+// plutôt que d'en renvoyer un nouveau à chaque fois.
+async function updateDiscordOrderStatus(order){
+  const url = state.discordWebhookUrl;
+  if(!url || !order.discordMessageId) return;
+  const embed = buildDiscordOrderEmbed(order);
+  try{
+    await fetch(`${url}/messages/${order.discordMessageId}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ embeds:[embed] })
+    });
+  }catch(e){
+    console.error('Erreur mise à jour statut Discord', e);
+  }
+}
+
+
 
 async function onSaveDiscordWebhook(){
   const val = document.getElementById('discordWebhookInput').value.trim();
@@ -3340,7 +3383,7 @@ async function onTestDiscordWebhook(){
   toast('Message test envoyé sur Discord');
 }
 
-function onSubmitOrder(){
+async function onSubmitOrder(){
   const err = document.getElementById('orderErr');
   const cName = document.getElementById('clientName').value.trim();
   const cPers = document.getElementById('contactPerson').value.trim();
@@ -3374,11 +3417,11 @@ function onSubmitOrder(){
     stockDeducted: false
   };
   state.orders.push(o);
-  saveOrders();
-  sendDiscordOrderNotification(o);
   setState({cart:{}, cartOpen:false, view:'mesCommandes'});
   toast('Commande validée !');
   playSuccessSound();
+  await sendDiscordOrderNotification(o); // récupère l'ID du message Discord pour pouvoir le mettre à jour plus tard
+  saveOrders();
 }
 
 function onReorder(oId){
@@ -3408,6 +3451,7 @@ function onStatusChange(id, val){
         saveCatalog();
     }
     saveOrders();
+    updateDiscordOrderStatus(o);
     toast('Statut mis à jour');
     render();
   }
