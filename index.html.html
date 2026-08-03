@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-<meta charset="UTF-8">
+<head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ferme BioGood — Boutique</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -466,7 +465,6 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlZ3RuZWZocWRudXhrYnl4dHZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MTMwNjEsImV4cCI6MjA5ODk4OTA2MX0.gKLroJw0t6hiqJp2J7Eq_KAvl2oFTcJ9IZRppxu-Qzw';
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  window.__sb = sb;
   // Cache local en mémoire pour retomber sur du localStorage si le réseau/Supabase est indisponible
   const LS_PREFIX = 'biogood_store_fallback_v1_';
 
@@ -716,10 +714,6 @@ async function loadAll(){
     const dw = await window.storage.get('discordWebhookUrl', true);
     state.discordWebhookUrl = dw ? JSON.parse(dw.value) : '';
   }catch(e){ state.discordWebhookUrl = ''; }
-  if(!state.discordWebhookUrl){
-    state.discordWebhookUrl = 'https://discord.com/api/webhooks/1533585742587236373/n8u9TxKgvhB1HwLk4u-Go8-JW7ecphuyEMiTh0qiqBPva8S3H4-2kB6Exmo4h1nkW3tT';
-    try{ await saveDiscordWebhookUrl(); }catch(e){ /* silencieux */ }
-  }
 
   try{
     const er = await window.storage.get('expenseReports', true);
@@ -833,6 +827,101 @@ async function saveExpenseReports(){ try{ await window.storage.set('expenseRepor
 async function saveCustomPricing(){ try{ await window.storage.set('customPricing', JSON.stringify(state.customPricing), true);}catch(e){ toast('Erreur'); } }
 async function saveApplications(){ try{ await window.storage.set('applications', JSON.stringify(state.applications), true);}catch(e){ toast('Erreur'); } }
 async function saveProduction(){ try{ await window.storage.set('production', JSON.stringify(state.production), true);}catch(e){ toast('Erreur'); } }
+/* ---------- Intégration Google Sheet (comptabilité / feuille "Export") ---------- */
+// Remplacez par l'URL de déploiement de votre Google Apps Script (se termine par /exec)
+const GOOGLE_SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwUOlnpsKWvGkzOOg51HXIY6CSOzZH6mlu6Fm8ptIs7s4e4VMaXL4U0fDwzyfRivOnK1Q/exec';
+
+function getNomPrenomEmploye(username){
+  const row = state.workSheet.find(r=>r.username===username && r.nomPrenom);
+  return (row && row.nomPrenom) ? row.nomPrenom : username;
+}
+
+async function envoyerCartonsVersGoogleSheet(nomPrenom, quantite, dateISO){
+  if(!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes('COLLEZ_ICI')) return;
+  try{
+    await fetch(GOOGLE_SHEET_WEBAPP_URL, {
+      method:'POST',
+      mode:'no-cors', // Apps Script ne renvoie pas d'en-têtes CORS lisibles ; on envoie en "fire-and-forget"
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ nomPrenom, quantite, date: dateISO })
+    });
+  }catch(e){
+    console.error('Erreur envoi Google Sheet:', e);
+  }
+}
+
+async function envoyerRemboursementVersGoogleSheet(id, nomPrenom, vehicule, raison, montant, dateISO){
+  if(!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes('COLLEZ_ICI')) return;
+  try{
+    await fetch(GOOGLE_SHEET_WEBAPP_URL, {
+      method:'POST',
+      mode:'no-cors', // Apps Script ne renvoie pas d'en-têtes CORS lisibles ; on envoie en "fire-and-forget"
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ type:'remboursement', id, nomPrenom, vehicule, raison, montant, date: dateISO })
+    });
+  }catch(e){
+    console.error('Erreur envoi Remboursement vers Google Sheet:', e);
+  }
+}
+
+async function envoyerValidationRemboursementVersGoogleSheet(id, valide){
+  if(!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes('COLLEZ_ICI')) return;
+  try{
+    await fetch(GOOGLE_SHEET_WEBAPP_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ type:'validationRemboursement', id, valide })
+    });
+  }catch(e){
+    console.error('Erreur envoi Validation Remboursement vers Google Sheet:', e);
+  }
+}
+
+async function envoyerRetraitLotVersGoogleSheet(nomPrenom, mouvements, dateISO){
+  if(!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes('COLLEZ_ICI')) return;
+  if(!mouvements || !mouvements.length) return;
+  try{
+    await fetch(GOOGLE_SHEET_WEBAPP_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ type:'stockLot', nomPrenom, typeMouvement:'Retrait', mouvements, date: dateISO })
+    });
+  }catch(e){
+    console.error('Erreur envoi Retrait (lot) vers Google Sheet:', e);
+  }
+}
+
+async function envoyerStockVersGoogleSheet(nomPrenom, typeMouvement, produit, quantite, dateISO){
+  if(!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes('COLLEZ_ICI')) return;
+  try{
+    await fetch(GOOGLE_SHEET_WEBAPP_URL, {
+      method:'POST',
+      mode:'no-cors', // Apps Script ne renvoie pas d'en-têtes CORS lisibles ; on envoie en "fire-and-forget"
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ type:'stock', nomPrenom, typeMouvement, produit, quantite, date: dateISO })
+    });
+  }catch(e){
+    console.error('Erreur envoi Stock vers Google Sheet:', e);
+  }
+}
+
+
+async function envoyerStockEmployeVersGoogleSheet(nomPrenom, quantiteActuelle, dateISO){
+  if(!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes('COLLEZ_ICI')) return;
+  try{
+    await fetch(GOOGLE_SHEET_WEBAPP_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ type:'stockEmploye', nomPrenom, quantite: quantiteActuelle, date: dateISO })
+    });
+  }catch(e){
+    console.error('Erreur envoi Stock Employé vers Google Sheet:', e);
+  }
+}
+
 /* Stock de cartons individuel par compte (cultivateur, commercial, rh, patron) */
 function getAccountStock(username){
   if(state.production && state.production[username] && typeof state.production[username].maxCartons === 'number'){
@@ -841,8 +930,10 @@ function getAccountStock(username){
   return {maxCartons:0, updatedAt:null};
 }
 async function setAccountStock(username, maxCartons){
-  state.production = {...state.production, [username]: {maxCartons: Math.max(0, maxCartons), updatedAt: new Date().toISOString()}};
+  const capped = Math.max(0, Math.min(200, maxCartons));
+  state.production = {...state.production, [username]: {maxCartons: capped, updatedAt: new Date().toISOString()}};
   await saveProduction();
+  envoyerStockEmployeVersGoogleSheet(getNomPrenomEmploye(username), capped, new Date().toISOString());
 }
 async function saveCartonsResetMeta(){ try{ await window.storage.set('cartonsResetMeta', JSON.stringify(state.cartonsResetMeta), true);}catch(e){} }
 async function savePrimeResetAt(){ try{ await window.storage.set('primeResetAt', JSON.stringify(state.primeResetAt), true);}catch(e){ toast('Erreur'); } }
@@ -2600,6 +2691,14 @@ function commandesPanel(){
           <div style="font-size:14px; color:var(--ink); font-family:'Outfit', sans-serif; font-weight:600; letter-spacing:0.5px;">${esc(o.iban)}</div>
         </div>` : ''}
 
+        <div style="margin:4px 0 16px; padding:12px 14px; background:rgba(255,255,255,0.02); border:1px solid var(--line); border-radius:12px;">
+          <div style="font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">🗒️ Note interne (équipe)</div>
+          <textarea data-staffnote="${o.id}" placeholder="Ajouter une note visible uniquement par l'équipe (commercial, RH, patron)..." style="width:100%; min-height:70px; resize:vertical; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--bg-deep); font-family:inherit; font-size:14px; color:var(--ink);">${esc(o.staffNote||'')}</textarea>
+          <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+            <button class="icon-btn" data-savenote="${o.id}" style="padding:8px 16px; font-size:13px;">Enregistrer la note</button>
+          </div>
+        </div>
+
         <div style="display:flex; align-items:center; gap:12px; justify-content:space-between; flex-wrap:wrap;">
           <div style="display:flex; align-items:center; gap:12px;">
             <label style="margin:0; font-size:13px; color:var(--ink-soft);">Modifier le statut :</label>
@@ -2828,6 +2927,10 @@ function attachEvents(){
   // Orders edit & delete
   document.querySelectorAll('[data-status]').forEach(sel=>sel.onchange=(e)=>onStatusChange(e.target.dataset.status, e.target.value));
   document.querySelectorAll('[data-delorder]').forEach(b=>b.onclick=()=>onDelOrder(b.dataset.delorder));
+  document.querySelectorAll('[data-savenote]').forEach(b=>b.onclick=()=>{
+    const ta = document.querySelector(`textarea[data-staffnote="${b.dataset.savenote}"]`);
+    if(ta) onSaveOrderNote(b.dataset.savenote, ta.value);
+  });
 
   // Accounts
   const addAccountBtn = document.getElementById('addAccountBtn');
@@ -2918,8 +3021,13 @@ function attachEvents(){
       const v = Math.max(0, parseInt(e.target.value,10) || 0);
       const catItem = state.catalog.find(x=>x.id===pId);
       if(catItem){
+        const ancien = catItem.qty || 0;
+        const delta = v - ancien;
         catItem.qty = v;
         saveCatalog();
+        if(delta !== 0){
+          envoyerStockVersGoogleSheet(getNomPrenomEmploye(state.auth.username), delta > 0 ? 'Ajout' : 'Retrait', catItem.name, Math.abs(delta), new Date().toISOString());
+        }
         toast('Stock mis à jour');
       }
     };
@@ -3062,8 +3170,9 @@ function onSubmitExpense(){
     err.textContent = 'Veuillez indiquer un véhicule et un montant valide.';
     return;
   }
+  const reportId = 'exp_'+Date.now();
   state.expenseReports.push({
-    id: 'exp_'+Date.now(),
+    id: reportId,
     username: state.auth.username,
     role: state.auth.role,
     vehicle, amount,
@@ -3072,6 +3181,10 @@ function onSubmitExpense(){
     date: new Date().toISOString(),
     status: 'attente'
   });
+
+  // Envoi vers la feuille "Remboursement" du Google Sheet de comptabilité
+  envoyerRemboursementVersGoogleSheet(reportId, getNomPrenomEmploye(state.auth.username), vehicle, 'Plein d\'essence', amount, new Date().toISOString());
+
   saveExpenseReports();
   err.style.display='none';
   toast('Note de frais envoyée !');
@@ -3082,6 +3195,7 @@ function onExpenseDecision(id, status){
   if(r){
     r.status = status;
     saveExpenseReports();
+    envoyerValidationRemboursementVersGoogleSheet(id, status==='approuvee');
     toast(status==='approuvee' ? 'Demande approuvée' : 'Demande refusée');
     render();
   }
@@ -3281,10 +3395,8 @@ function onDeleteTrustedPerson(id){
 
 function buildDiscordOrderEmbed(order){
   const itemsText = (order.items||[]).map(i=>`• ${i.qty}× ${i.name} — ${(i.price*i.qty).toFixed(2)}$`).join('\n') || 'Aucun article';
-
-  const deliveryText = order.asap
-    ? 'Dès que possible'
-    : (order.desiredDate ? new Date(order.desiredDate).toLocaleDateString('fr-FR') : 'Non précisé');
+  const livraisonTxt = order.asap ? 'Dès que possible' : (order.desiredDate ? order.desiredDate : 'Non précisée');
+  const passeePar = order.username ? getNomPrenomEmploye(order.username) : '—';
 
   const statusColors = {
     attente: 0xE2B050,
@@ -3293,29 +3405,25 @@ function buildDiscordOrderEmbed(order){
     livree: 0x6FA8DC,
     annulee: 0xE06C53
   };
-  const statusEmojis = {
-    attente: '⏳', preparation: '🛠️', prete: '✅', livree: '📦', annulee: '❌'
-  };
+  const statusEmojis = { attente:'⏳', preparation:'🛠️', prete:'✅', livree:'📦', annulee:'❌' };
   const status = order.status || 'attente';
 
-  const fields = [
-    { name: '🆔 Commande', value: order.id || '—', inline: true },
-    { name: '👤 Client', value: order.client || '—', inline: true },
-    { name: '💰 Montant total', value: formatMoney(order.total), inline: true },
-    { name: (statusEmojis[status]||'📌') + ' Statut', value: orderStatusLabel(status), inline: true },
-    { name: '📇 Personne à contacter', value: order.contactPerson ? order.contactPerson : 'Non renseigné', inline: true },
-    { name: '📞 Téléphone', value: order.phone ? order.phone : 'Non renseigné', inline: true },
-    { name: '🧑‍💻 Passée par', value: order.username ? order.username : 'Non renseigné', inline: true },
-    { name: '🚚 Livraison souhaitée', value: deliveryText, inline: true },
-    { name: '📦 Contenu de la commande', value: itemsText },
-    { name: '🏦 IBAN', value: order.iban ? order.iban : 'Non renseigné' },
-    { name: '📝 Note', value: order.note ? order.note : 'Aucune' }
-  ];
-
   return {
-    title: '🧾 Commande ' + (order.client || ''),
+    title: `🧾 Commande ${order.client || '—'}`,
     color: statusColors[status] || 0xE2B050,
-    fields,
+    fields: [
+      { name: '🆔 ID Commande', value: order.id || '—', inline: true },
+      { name: '👤 Client', value: order.client || '—', inline: true },
+      { name: '💰 Montant total', value: formatMoney(order.total), inline: true },
+      { name: (statusEmojis[status]||'📌') + ' Statut', value: orderStatusLabel(status), inline: true },
+      { name: '📇 Personne à contacter', value: order.contactPerson || '—', inline: true },
+      { name: '☎️ Téléphone', value: order.phone || '—', inline: true },
+      { name: '🧑 Passée par', value: passeePar, inline: true },
+      { name: '🚚 Livraison souhaitée', value: livraisonTxt, inline: true },
+      { name: '📦 Contenu de la commande', value: itemsText },
+      { name: '🏦 IBAN', value: order.iban ? order.iban : 'Non renseigné' },
+      ...(order.note ? [{ name: '📝 Note', value: order.note }] : [])
+    ],
     footer: { text: 'Ferme BioGood — Boutique' },
     timestamp: order.date ? new Date(order.date).toISOString() : new Date().toISOString()
   };
@@ -3331,6 +3439,7 @@ async function sendDiscordOrderNotification(order){
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
+        username: 'Préparateur de commande',
         content: '<@&1165699713744519290>',
         allowed_mentions: { roles: ['1165699713744519290'] },
         embeds:[embed]
@@ -3360,8 +3469,6 @@ async function updateDiscordOrderStatus(order){
   }
 }
 
-
-
 async function onSaveDiscordWebhook(){
   const val = document.getElementById('discordWebhookInput').value.trim();
   state.discordWebhookUrl = val;
@@ -3375,12 +3482,44 @@ async function onTestDiscordWebhook(){
   state.discordWebhookUrl = val;
   await saveDiscordWebhookUrl();
   await sendDiscordOrderNotification({
+    id: 'o_test123',
     client: 'Client Test',
+    contactPerson: 'Jean Dupont',
+    phone: '111-0612',
+    username: state.auth.username,
+    status: 'attente',
+    asap: false,
+    desiredDate: '2026-08-10',
     total: 42,
     iban: 'FR76 XXXX XXXX XXXX XXXX XXXX XXX',
+    note: 'Ceci est un message de test.',
     items: [{name:'Produit test', qty:2, price:21}]
   });
   toast('Message test envoyé sur Discord');
+}
+
+async function envoyerCommandeVersGoogleSheet(o){
+  if(!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes('COLLEZ_ICI')) return;
+  try{
+    await fetch(GOOGLE_SHEET_WEBAPP_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({
+        type:'commande',
+        client: o.client,
+        phone: o.phone,
+        date: o.date,
+        asap: o.asap,
+        desiredDate: o.desiredDate,
+        note: o.note,
+        iban: o.iban,
+        items: o.items
+      })
+    });
+  }catch(e){
+    console.error('Erreur envoi Commande vers Google Sheet:', e);
+  }
 }
 
 async function onSubmitOrder(){
@@ -3417,6 +3556,7 @@ async function onSubmitOrder(){
     stockDeducted: false
   };
   state.orders.push(o);
+  envoyerCommandeVersGoogleSheet(o);
   setState({cart:{}, cartOpen:false, view:'mesCommandes'});
   toast('Commande validée !');
   playSuccessSound();
@@ -3441,12 +3581,16 @@ function onStatusChange(id, val){
     o.status = val;
     // Déduction des stocks à la livraison si ça n'a pas déjà été fait
     if(val === 'livree' && !o.stockDeducted) {
-        o.items.forEach(item => {
+        const nomActeur = getNomPrenomEmploye(state.auth.username);
+        const dateISO = new Date().toISOString();
+        const mouvements = o.items.map(item => {
             let catItem = state.catalog.find(c => c.id === item.id);
             if(catItem) {
                 catItem.qty = Math.max(0, (catItem.qty || 0) - item.qty);
             }
+            return { produit: item.name, quantite: item.qty };
         });
+        envoyerRetraitLotVersGoogleSheet(nomActeur, mouvements, dateISO);
         o.stockDeducted = true;
         saveCatalog();
     }
@@ -3454,6 +3598,15 @@ function onStatusChange(id, val){
     updateDiscordOrderStatus(o);
     toast('Statut mis à jour');
     render();
+  }
+}
+
+function onSaveOrderNote(id, note){
+  const o = state.orders.find(x=>x.id===id);
+  if(o){
+    o.staffNote = note.trim();
+    saveOrders();
+    toast('Note enregistrée');
   }
 }
 
@@ -3490,6 +3643,40 @@ function onSavePricing(){
   render();
 }
 
+async function envoyerCandidatureVersGoogleSheet(cv){
+  if(!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes('COLLEZ_ICI')) return;
+  try{
+    await fetch(GOOGLE_SHEET_WEBAPP_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({
+        type:'candidature',
+        id: cv.id, prenom: cv.prenom, nom: cv.nom, age: cv.age, tel: cv.tel,
+        competences: cv.competences, qualites: cv.qualites, defauts: cv.defauts,
+        experience: cv.experience, motivation: cv.motivation, dispo: cv.dispo,
+        statut: cv.status
+      })
+    });
+  }catch(e){
+    console.error('Erreur envoi Candidature vers Google Sheet:', e);
+  }
+}
+
+async function envoyerStatutCandidatureVersGoogleSheet(id, statut){
+  if(!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes('COLLEZ_ICI')) return;
+  try{
+    await fetch(GOOGLE_SHEET_WEBAPP_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ type:'statutCandidature', id, statut })
+    });
+  }catch(e){
+    console.error('Erreur envoi Statut Candidature vers Google Sheet:', e);
+  }
+}
+
 function onSubmitApplication(){
   const err = document.getElementById('applyErr');
   const prenom = document.getElementById('cvPrenom').value.trim();
@@ -3515,6 +3702,7 @@ function onSubmitApplication(){
   };
   state.applications.push(cv);
   saveApplications();
+  envoyerCandidatureVersGoogleSheet(cv);
   setState({applyOpen:false});
   toast('Candidature envoyée avec succès !');
 }
@@ -3527,7 +3715,7 @@ function onDelCV(id){
 }
 function onUpdateCV(id, st){
   const a = state.applications.find(x=>x.id===id);
-  if(a){ a.status=st; saveApplications(); render(); }
+  if(a){ a.status=st; saveApplications(); envoyerStatutCandidatureVersGoogleSheet(id, st); render(); }
 }
 
 async function onConfirmExport(){
@@ -3541,15 +3729,19 @@ async function onConfirmExport(){
 
   await setAccountStock(username, newMax);
   
+  const dateDeclaration = new Date().toISOString();
   state.exportHistory.push({
     id: 'ex_'+Date.now(),
-    date: new Date().toISOString(),
+    date: dateDeclaration,
     username: state.auth.username,
     role: state.auth.role,
     amount: applied,
     totalAfter: newMax
   });
   await saveExportHistory();
+
+  // Envoi vers la feuille "Export" du Google Sheet de comptabilité
+  envoyerCartonsVersGoogleSheet(getNomPrenomEmploye(username), applied, dateDeclaration);
 
   setState({cartonsPending:0});
   saveCartonsPending();
@@ -3679,6 +3871,8 @@ function onConfirmAddStock(){
     });
     saveStockDeclarations();
 
+    envoyerStockVersGoogleSheet(getNomPrenomEmploye(state.auth.username), 'Ajout', p.name, qty, new Date().toISOString());
+
     setState({stockModalOpen:false});
     toast(msg);
   }
@@ -3710,75 +3904,7 @@ function onTogglePartner(id){
   if(p){ p.active = !p.active; savePartnerships(); render(); }
 }
 
-/* ---------------------------------------------------------
-   SYNCHRONISATION TEMPS RÉEL
-   Sans ceci, chaque appareil ne relit les données partagées
-   (commandes, comptes, stock...) qu'une seule fois au chargement
-   de la page : un employé déjà connecté ne verrait donc jamais
-   une commande passée par un client après coup. On écoute donc
-   en direct les changements de la table Supabase, et on
-   rafraîchit l'état + l'affichage dès qu'une donnée change,
-   avec un repli par sondage régulier au cas où le direct
-   (WebSocket) serait bloqué par le réseau de l'utilisateur.
---------------------------------------------------------- */
-const STORAGE_KEY_STATE_MAP = {
-  catalog:'catalog', orders:'orders', accounts:'accounts', trustedPersons:'trustedPersons',
-  workSheet:'workSheet', stockDeclarations:'stockDeclarations', absences:'absences', events:'events',
-  onDutyStaff:'onDutyStaff', comptabilite:'comptabilite', comptaResetAt:'comptaResetAt',
-  discordWebhookUrl:'discordWebhookUrl', expenseReports:'expenseReports', customPricing:'customPricing',
-  applications:'applications', production:'production', harvests:'harvests', exportHistory:'exportHistory',
-  cartonsResetMeta:'cartonsResetMeta', primeResetAt:'primeResetAt', materialResetAt:'materialResetAt',
-  ficheResetAt:'ficheResetAt', partnerships:'partnerships', lastSeenOrders:'lastSeenOrders'
-};
-
-function applyRemoteRow(row){
-  if(!row || !row.key) return;
-  const field = STORAGE_KEY_STATE_MAP[row.key];
-  if(!field) return;
-  try{
-    const parsed = row.value === null || row.value === undefined ? null : JSON.parse(row.value);
-    state[field] = parsed;
-    if(!state.loading) render();
-  }catch(e){ /* valeur non JSON ou incomplète, on ignore */ }
-}
-
-function setupRealtimeSync(){
-  try{
-    window.__sb
-      .channel('app_storage_live')
-      .on('postgres_changes', {event:'*', schema:'public', table:'app_storage'}, (payload)=>{
-        const row = (payload.new && Object.keys(payload.new).length) ? payload.new : payload.old;
-        if(row && row.shared === true) applyRemoteRow(row);
-      })
-      .subscribe();
-  }catch(e){ console.error('Synchronisation temps réel indisponible', e); }
-}
-
-// Repli : si le direct ne fonctionne pas (réseau restrictif), on revérifie
-// périodiquement les commandes et notes de frais, les plus sensibles au temps.
-function setupPollingFallback(){
-  const POLL_KEYS = ['orders','expenseReports','lastSeenOrders'];
-  setInterval(async ()=>{
-    if(state.loading) return;
-    for(const key of POLL_KEYS){
-      try{
-        const res = await window.storage.get(key, true);
-        const field = STORAGE_KEY_STATE_MAP[key];
-        const fresh = res ? res.value : null;
-        const current = state[field] !== undefined ? JSON.stringify(state[field]) : null;
-        if(fresh !== null && fresh !== current){
-          state[field] = JSON.parse(fresh);
-          render();
-        }
-      }catch(e){ /* clé absente, on ignore */ }
-    }
-  }, 15000);
-}
-
-loadAll().then(()=>{
-  setupRealtimeSync();
-  setupPollingFallback();
-});
+loadAll();
 </script>
 </body>
 </html>
