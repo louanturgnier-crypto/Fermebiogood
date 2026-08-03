@@ -494,7 +494,10 @@
       const { error } = await sb
         .from('app_storage')
         .upsert({ key, shared, value, updated_at: new Date().toISOString() }, { onConflict: 'key,shared' });
-      if(error){ console.error('Erreur Supabase set', error); }
+      if(error){
+        console.error('Erreur Supabase set', error);
+        throw new Error('Échec de sauvegarde (' + key + '): ' + (error.message || error.code || 'erreur inconnue'));
+      }
       return {key, value, shared};
     },
     async delete(key, shared){
@@ -813,7 +816,7 @@ async function loadAll(){
 }
 async function saveCatalog(){ try{ await window.storage.set('catalog', JSON.stringify(state.catalog), true);}catch(e){ toast('Erreur'); } }
 async function saveOrders(){ try{ await window.storage.set('orders', JSON.stringify(state.orders), true);}catch(e){ toast('Erreur'); } }
-async function saveAccounts(){ try{ await window.storage.set('accounts', JSON.stringify(state.accounts), true);}catch(e){ toast('Erreur'); } }
+async function saveAccounts(){ try{ await window.storage.set('accounts', JSON.stringify(state.accounts), true);}catch(e){ console.error(e); toast('⚠️ Compte non synchronisé : ' + e.message); throw e; } }
 async function saveTrustedPersons(){ try{ await window.storage.set('trustedPersons', JSON.stringify(state.trustedPersons), true);}catch(e){ toast('Erreur'); } }
 async function saveWorkSheet(){ try{ await window.storage.set('workSheet', JSON.stringify(state.workSheet), true);}catch(e){ toast('Erreur'); } }
 async function saveStockDeclarations(){ try{ await window.storage.set('stockDeclarations', JSON.stringify(state.stockDeclarations), true);}catch(e){ toast('Erreur'); } }
@@ -3133,7 +3136,7 @@ function onSaveProduct(id){
   if(p){ p.price = nv; saveCatalog(); toast('Prix mis à jour'); }
 }
 
-function onAddAccount(uId, pId, rId, errId){
+async function onAddAccount(uId, pId, rId, errId){
   const u = document.getElementById(uId).value.trim();
   const p = document.getElementById(pId).value;
   const r = document.getElementById(rId).value.trim().toLowerCase();
@@ -3147,10 +3150,18 @@ function onAddAccount(uId, pId, rId, errId){
     document.getElementById(errId).textContent = 'Identifiant déjà utilisé.';
     return;
   }
-  state.accounts.push({username:u, password:p, role:r});
-  saveAccounts();
-  toast('Compte créé');
-  render();
+  const previousAccounts = state.accounts;
+  state.accounts = [...state.accounts, {username:u, password:p, role:r}];
+  try{
+    await saveAccounts();
+    toast('Compte créé');
+    render();
+  }catch(e){
+    state.accounts = previousAccounts;
+    document.getElementById(errId).style.display='block';
+    document.getElementById(errId).textContent = 'Échec de la création : le compte n\'a pas pu être synchronisé. Réessayez.';
+    render();
+  }
 }
 function onDelAccount(username){
   if(confirm("Supprimer l'accès pour "+username+" ?")){
